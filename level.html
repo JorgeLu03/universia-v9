@@ -11,15 +11,17 @@
         <h1>Elige el Nivel</h1>
         <div class="informacion">
             <div class="niveles-list">
-                <a href="game.html"><button class="nivel-btn" id="nivel1">Nivel 1</button></a>
-                <a href="game2.html"><button class="nivel-btn" id="nivel2">Nivel 2</button></a>
-                <a href="level3.html"><button class="nivel-btn" id="nivel3">Nivel 3</button></a>
+                <button class="nivel-btn" id="nivel1" data-target="game.html">Nivel 1</button>
+                <button class="nivel-btn" id="nivel2" data-target="game2.html">Nivel 2</button>
+                <button class="nivel-btn" id="nivel3" data-target="level3.html">Nivel 3</button>
             </div>
         </div>
         <div class="botones">
-            <a href="main.html"><button>CANCELAR</button></a>
+            <a href="mode.html"><button type="button">REGRESAR</button></a>
+            <button id="start-level" type="button">COMENZAR</button>
         </div>
     </div>
     <script src="js/background-music.js"></script>
+    <script src="js/level-select.js"></script>
 </body>
 </html>

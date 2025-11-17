@@ -12,7 +12,7 @@
         <div class="informacion">
             <div class="opciones">
                 <label for="username">Nombre de usuario</label>
-                <input type="text" id="username" placeholder="Tu nombre de usuario">
+                <input type="text" id="username" placeholder="Tu nombre de usuario" disabled>
 
                 <label for="avatar">Selecciona tu avatar</label>
                 <div class="avatar-list">
@@ -21,7 +21,7 @@
                 </div>
 
                 <label for="volume">Volumen</label>
-                <input type="range" id="volume" min="0" max="100">
+                <input type="range" id="volume" min="0" max="100" value="80">
 
                 <label for="language">Idioma</label>
                 <select id="language">
@@ -31,10 +31,11 @@
             </div>
         </div>
         <div class="botones">
-            <a href="main.html"><button>GUARDAR</button></a>
-            <a href="main.html"><button>CANCELAR</button></a>
+            <a href="main.html"><button type="button">REGRESAR</button></a>
+            <button id="save-settings" type="button">GUARDAR</button>
         </div>
     </div>
     <script src="js/background-music.js"></script>
+    <script type="module" src="js/settings.js"></script>
 </body>
 </html>

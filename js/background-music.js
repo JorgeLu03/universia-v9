@@ -4,11 +4,13 @@
     if (!window.persistentMusic) {
         window.persistentMusic = {
             audio: new Audio('assets/Sonido/MUSICA_FONDO.mp3'),
-            initialized: false
+            initialized: false,
+            volume: parseFloat(localStorage.getItem('universiaVolume') ?? '0.8')
         };
     }
 
     const music = window.persistentMusic.audio;
+    music.volume = window.persistentMusic.volume;
 
     function saveState() {
         sessionStorage.setItem('musicTime', music.currentTime);
@@ -46,5 +48,12 @@
 
     // When the page loads, load the saved time and start playing.
     window.addEventListener('load', loadStateAndPlay);
+
+    window.addEventListener('universia-volume-change', (event) => {
+        const newVolume = event.detail;
+        music.volume = newVolume;
+        window.persistentMusic.volume = newVolume;
+        localStorage.setItem('universiaVolume', String(newVolume));
+    });
 
 })();

@@ -5,8 +5,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginLink = document.getElementById('login-link');
     const userNameDiv = document.getElementById('user-name');
     const logoutBtn = document.getElementById('logout-btn');
+    const playLink = document.getElementById('play-link');
+    let isAuthenticated = false;
+
+    playLink?.addEventListener('click', (event) => {
+        if (!isAuthenticated) {
+            event.preventDefault();
+            alert('Inicia sesión para acceder a los modos de juego.');
+        }
+    });
 
     onAuthStateChanged(auth, (user) => {
+        isAuthenticated = Boolean(user);
         if (user) {
             // Mostrar nombre y botón de logout
             if (userNameDiv) {

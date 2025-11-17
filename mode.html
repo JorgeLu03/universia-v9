@@ -25,21 +25,11 @@
             </div>
         </div>
         <div class="botones">
-            <a href="level.html"><button>CONTINUAR</button></a>
-            <a href="main.html"><button>CANCELAR</button></a>
+            <a href="main.html"><button type="button">REGRESAR</button></a>
+            <button id="continue-btn" type="button">CONTINUAR</button>
         </div>
     </div>
     <script src="js/background-music.js"></script>
+    <script src="js/mode.js"></script>
 </body>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const modeBtns = document.querySelectorAll('.mode-btn');
-        modeBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                modeBtns.forEach(b => b.classList.remove('selected'));
-                btn.classList.add('selected');
-            });
-        });
-    });
-</script>
 </html>
