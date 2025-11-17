@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universia</title>
+    <link rel="stylesheet" href="css/mode.css">
+</head>
+<body>
+    <div class="contenedor">
+        <h1>Modo de Juego</h1>
+        <div class="informacion">
+            <div class="opciones">
+                <label for="game-mode">Selecciona el modo</label>
+                <div class="mode-list">
+                    <button class="mode-btn" id="individual">Individual</button>
+                    <button class="mode-btn" id="multijugador">Multijugador</button>
+                </div>
+
+                <label for="difficulty">Nivel de dificultad</label>
+                <select id="difficulty">
+                    <option value="normal">Normal</option>
+                    <option value="dificil">Difícil</option>
+                </select>
+            </div>
+        </div>
+        <div class="botones">
+            <a href="level.html"><button>CONTINUAR</button></a>
+            <a href="main.html"><button>CANCELAR</button></a>
+        </div>
+    </div>
+    <script src="js/background-music.js"></script>
+</body>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const modeBtns = document.querySelectorAll('.mode-btn');
+        modeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                modeBtns.forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+            });
+        });
+    });
+</script>
+</html>

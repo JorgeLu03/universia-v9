@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universia</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    <div class="top">
+        <div class="title">
+            <h2>Bienvenido a</h2>
+            <h1>UNIVERSIA</h1>
+        </div>
+        <div class="user-info" style="display: flex; align-items: center; gap: 10px; position: absolute; top: 10px; right: 10px;">
+            <a href="login.html" id="login-link">
+                <img src="assets/images/user24.png" alt="User" style="width: 32px; height: 32px; border-radius: 50%;">
+            </a>
+        </div>
+        <div class="user-session" style="display: flex; align-items: center; gap: 10px; position: absolute; top: 10px; right: 60px;">
+            <span id="user-name" style="display:none; font-weight:bold; color: white;"></span>
+            <button id="logout-btn" style="display:none;">Cerrar Sesión</button>
+        </div>
+    </div>
+    <div class="bottom">
+        <div class="comunidad">
+            <a href="feed.html">
+                <img src="./assets/images/community.png">
+                <p>Comunidad</p>
+            </a>
+        </div>
+        <div class="buttons">
+            <a href="mode.html">
+            <button id="jugar">JUGAR</button>
+            </a>
+            <a href="ranking.html">
+                <button id="ranking">RANKING</button>
+            </a>
+            <a href="settings.html">
+                <button id="settings">CONFIGURACIÓN</button>
+            </a>
+        </div>
+    </div>
+    <script src="js/background-music.js"></script>
+    <script type="module" src="js/main-user.js"></script>
+</body>
+</html>

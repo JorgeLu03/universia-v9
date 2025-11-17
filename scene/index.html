@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Modelos</title>
+    <style>
+      body {
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import * as THREE from "./three.module.js";
+      import { OrbitControls } from "./OrbitControls.js";
+      import { STLLoader } from "./STLLoader.js";
+      import { GLTFLoader } from "./GLTFLoader.js";
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color("#34495E");
+
+      const camera = new THREE.PerspectiveCamera(
+        45,
+        window.innerWidth / window.innerHeight
+      );
+
+      camera.position.set(0, 5, 20);
+
+      const renderer = new THREE.WebGLRenderer();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      const hemisphereLight = new THREE.HemisphereLight(0xffffbb, 0x080820, 1);
+      scene.add(hemisphereLight);
+
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+      directionalLight.position.set(1, 5, -1);
+      scene.add(directionalLight);
+
+      const planeGeometry = new THREE.PlaneGeometry(50, 50);
+      const planeMaterial = new THREE.MeshStandardMaterial({
+        color: "slategrey",
+      });
+      const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+      plane.rotateX(-Math.PI / 2);
+      scene.add(plane);
+
+      const loaderSTL = new STLLoader();
+      loaderSTL.load("deadMouse.stl", function (geometry) {
+        const material = new THREE.MeshPhongMaterial({ color: "red" });
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.rotateX(-Math.PI / 2);
+        mesh.scale.set(0.03, 0.03, 0.03);
+        scene.add(mesh);
+      });
+
+      const loaderGLB = new GLTFLoader();
+      loaderGLB.load(
+        "police_officer_redford_-_proto_series_-_free.glb",
+        function (model) {
+          const obj = model.scene;
+          obj.scale.set(0.03, 0.03, 0.03);
+          obj.position.set(6, 0, 0);
+          scene.add(obj);
+        }
+      );
+
+      let mixer;
+      const kazurka = new GLTFLoader();
+      kazurka.load("./kazurka/scene.gltf", function (model) {
+        console.log(model);
+        const obj = model.scene;
+        obj.position.set(-6, 0, 0);
+        scene.add(obj);
+        mixer = new THREE.AnimationMixer(obj);
+        const action = mixer.clipAction(model.animations[5]);
+        action.play();
+      });
+
+      const cameraControl = new OrbitControls(camera, renderer.domElement);
+
+      function animate() {
+        if (mixer) {
+          mixer.update(0.01);
+        }
+        renderer.render(scene, camera);
+        requestAnimationFrame(animate);
+      }
+      animate();
+    </script>
+    <script src="../js/background-music.js"></script>
+  </body>
+</html>

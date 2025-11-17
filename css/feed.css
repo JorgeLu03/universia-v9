@@ -1,0 +1,174 @@
+@font-face {
+    font-family: "PixelifySans-Regular";
+    src: url(../assets/fonts/Pixelify_Sans/PixelifySans-Regular.ttf)format(truetype);
+}
+
+@font-face {
+    font-family: "PixelifySans-SemiBold";
+    src: url(../assets/fonts/Pixelify_Sans/PixelifySans-SemiBold.ttf)format(truetype);
+}
+
+@font-face {
+    font-family: "Daydream";
+    src: url(../assets/fonts/daydream_3/Daydream\ DEMO.otf)format(truetype);
+}
+
+body{
+    background-image: url(../assets/images/clouds-long.jpg);
+    background-size: cover;
+    display: flex;
+    font-family: PixelifySans-Regular;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center; 
+    margin: 0;
+}
+
+.top{
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin: 30px 0px;
+}
+
+.top img{
+    width: 100px;
+    margin: 0px 40px;
+}
+
+.center{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center; 
+}
+
+h1{
+    font-family: Daydream;
+    color: #FDF0D5;
+    font-size: 300%;
+    margin-bottom: 0px;
+}
+
+h2{
+    color: #FDF0D5;
+    font-size: 200%;
+}
+
+a{
+    color: #FDF0D5;
+    text-decoration: none;
+    transition: 0.2s;
+}
+
+a:hover{
+    color: #01295F;
+}
+
+.main{
+    display: flex;
+    flex-direction: column;
+    margin-top: 50px;
+    background-color: #012a5fa3;
+    padding: 20px 50px;
+    border: 30px solid;
+    border-radius: 2%;
+    border-image: url(../assets/images/border-4.png) 33% round;
+}
+
+.crear-publi{
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+}
+
+.crear-publi p{
+    color: #FDF0D5;
+    font-size: 18px;
+}
+
+textarea{
+    width: 800px;
+    height: 80px;
+    background-color: #437F97;
+    color: #FDF0D5;
+    font-family: PixelifySans-Regular;
+    font-size: 20px;
+    border: 30px solid;
+    border-radius: 15%;
+    border-image: url(../assets/images/border-5.png) 33% round;
+    resize: none;
+    transition: 0.2s;
+}
+
+textarea::placeholder{
+    color: #FDF0D5;
+}
+
+textarea:focus{
+    outline: none;
+    border-image: url(../assets/images/border-1.png) 33% round;
+}
+
+.crear-publi button{
+    width: 250px;
+    background-color: #849324;
+    font-family: PixelifySans-SemiBold;
+    font-size: 20px;
+    color: #FDF0D5;
+    border: 20px solid;
+    border-radius: 25%;
+    border-image: url(../assets/images/border-1.png) 30% round;
+    transition: 0.2s;
+}
+
+.crear-publi button:hover{
+    transform: scale(1.1);
+    background-color: #FD151B;
+    cursor: pointer;
+}
+
+#feed{
+    display: flex;
+    flex-direction: column;
+}
+
+.publicacion{
+    background-color: #01295F;
+    border: 30px solid;
+    border-radius: 8%;
+    border-image: url(../assets/images/border-4-full.png) 33% round;
+    color: #FDF0D5;
+    margin: 20px 0px;
+    display: block;
+}
+
+
+.head-publi{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 15px;
+    font-family: PixelifySans-SemiBold;
+    font-size: 25px;
+    margin: 0;
+    
+}
+.head-publi img{
+    width: 60px;
+    height: 60px;
+}
+.head-publi h3{
+    margin: 0;
+}
+
+.publicacion small{
+    font-size: 18px;
+    margin: 0px 75px;
+    color: #437F97;
+}
+.publicacion p{
+    font-size: 20px;
+    padding: 0px 20px;
+}

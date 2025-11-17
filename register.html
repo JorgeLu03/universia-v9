@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universia</title>
+    <link rel="stylesheet" href="css/register.css">
+</head>
+<body>
+
+    <div class="contenedor" id="datosP">
+        <h1>Registro</h1>
+        <div class="informacion">
+
+            <span class="datos">
+                <label for="email">Correo Electrónico</label>
+                <input type="email" id="email" autocomplete="email">
+                <label for="username">Nombre de usuario</label>
+                <input type="text" id="username" autocomplete="username">
+                <label for="password">Contraseña</label>
+                <input type="password" id="password" autocomplete="new-password">
+                <label for="confirm-password">Confirmar contraseña</label>
+                <input type="password" id="confirm-password" autocomplete="new-password">
+                <!-- Input de imagen de perfil eliminado -->
+            </span>
+
+            <!-- Espacio de previsualización de imagen eliminado -->
+
+        </div>
+        <button id="btn-siguiente">SIGUIENTE</button>
+    </div>
+
+    <div class="contenedor" id="datosJ">
+        <h1>Bienvenido</h1>
+        <div class="informacion">
+
+            <span class="usuario">
+                <p>Nombre de usuario</p>
+                <img src="assets/images/user24-1.png" width="200px">
+            </span>
+
+            <span class="eleccion">
+            <p>Escoge 3 Flammas</p>
+            <div class="flammas">AQUI SE VERAN LAS FLAMMAS</div>
+            </span>
+
+        </div>
+        <a href="main.html">
+            <button>CONTINUAR</button>
+        </a>
+    </div>
+    <script type="module" src="js/register.js"></script>
+    <script src="js/background-music.js"></script>
+</body>
+</html>

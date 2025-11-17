@@ -1,0 +1,77 @@
+@font-face {
+    font-family: "PixelifySans-SemiBold";
+    src: url(../assets/fonts/Pixelify_Sans/PixelifySans-SemiBold.ttf)format(truetype);
+}
+
+@font-face {
+    font-family: "Daydream";
+    src: url(../assets/fonts/daydream_3/Daydream\ DEMO.otf)format(truetype);
+}
+
+body {
+    background-image: url('../assets/images/pause-bg.png');
+    background-size: cover;
+    background-position: center;
+    font-family: PixelifySans-SemiBold;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.top {
+    margin-top: 80px;
+    text-align: center;
+}
+
+h1 {
+    color: #FDF0D5;
+    font-family: Daydream;
+    font-size: 450%;
+}
+
+.bottom {
+    display: flex;
+    flex-direction: column;
+    margin-top: 10px;
+}
+
+button{
+    margin: 10px;
+    width: 250px;
+    font-family: PixelifySans-SemiBold;
+    font-size: 160%;
+    color: #FDF0D5;
+    border: 30px solid;
+    border-radius: 25%;
+    border-image: url(../assets/images/border-1.png) 33% round;
+}
+
+#continuar {
+    background-color: #FD151B;
+}
+#continuar:hover{
+    background-color: #FFB30F;
+    transform: scale(1.1);
+}
+
+#settings {
+    background-color: #437F97;
+}
+#settings:hover{
+    background-color: #FFB30F;
+    transform: scale(1.1);
+}
+
+#salir {
+    background-color: #849324;
+}
+#salir:hover{
+    background-color: #FFB30F;
+    transform: scale(1.1);
+}
+
+button:hover {
+    background-color: #FFB30F;
+    transform: scale(1.1);
+}

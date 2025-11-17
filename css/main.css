@@ -1,0 +1,175 @@
+@font-face {
+    font-family: "PixelifySans-Regular";
+    src: url(../assets/fonts/Pixelify_Sans/PixelifySans-Regular.ttf)format(truetype);
+}
+
+@font-face {
+    font-family: "PixelifySans-SemiBold";
+    src: url(../assets/fonts/Pixelify_Sans/PixelifySans-SemiBold.ttf)format(truetype);
+}
+
+@font-face {
+    font-family: "Daydream";
+    src: url(../assets/fonts/daydream_3/Daydream\ DEMO.otf)format(truetype);
+}
+
+body{
+    background-image: url('../assets/images/main-bg.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    font-family: PixelifySans-SemiBold;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center; 
+    margin: 0;
+    position: relative;
+}
+
+.top {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  position: relative;      /* para posicionar la imagen de forma absoluta */
+  height: 270px;
+  width: 100%;
+  
+}
+
+.title {
+  text-align: center;
+}
+
+.top img {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 80px;
+  padding: 10px;
+}
+
+.top img:hover{
+    transform: scale(1.1);
+}
+
+h2{
+    color: #FFB30F;
+    font-size: 250%;
+    margin: 100px 0px 0px 0px;
+}
+
+h1{
+    color: #FDF0D5;
+    font-family: Daydream;
+    font-size: 400%;
+    margin: 0px;
+    
+}
+
+.bottom {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.comunidad a{
+    background-color: #FFB30F;
+    position: absolute;
+    bottom: 20px;
+    left: 60px;
+    height: 50px;
+    display: flex;
+    padding: 0px 10px;
+    align-items: center;
+    gap: 20px;
+    cursor: pointer;
+    color: #01295F;
+    font-size: 160%;
+    text-decoration: none;
+    border: 20px solid;
+    border-radius: 25%;
+    border-image: url(../assets/images/border-1.png) 20% round;
+    transition: 0.2s;
+}
+
+.comunidad img {
+    width: 50px;
+    height: 50px;
+}
+
+.comunidad a:hover{
+    background-color: #FD151B;
+    color: #FDF0D5;
+    transform: scale(1.1);
+}
+
+.buttons{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center; 
+    margin: 10px;
+}
+
+button{
+    margin: 10px;
+    width: 250px;
+    font-family: PixelifySans-SemiBold;
+    font-size: 160%;
+    color: #FDF0D5;
+    border: 30px solid;
+    border-radius: 25%;
+    border-image: url(../assets/images/border-1.png) 33% round;
+}
+
+#jugar{
+    background-color: #FD151B;
+}
+
+#ranking{
+    background-color: #849324;
+}
+
+#settings{
+    background-color: #437F97;
+}
+
+
+
+#jugar:hover{
+    background-color: #FFB30F;
+    transform: scale(1.1);
+}
+
+#ranking:hover{
+    background-color: #FFB30F;
+    transform: scale(1.1);
+}
+
+#settings:hover{
+    background-color: #FFB30F;
+    transform: scale(1.1);
+}
+
+#logout-btn {
+    background-color: #FD151B;
+    color: #FDF0D5;
+    border: none;
+    cursor: pointer;
+    font-size: 20px;
+    text-align: center;
+    margin: 0;
+    padding: 6px 16px;
+    border-radius: 6px;
+    height: auto;
+    width: auto;
+    line-height: normal;
+    transition: background 0.2s, transform 0.2s;
+}
+
+#logout-btn:hover {
+    background-color: #FFB30F;
+}
+

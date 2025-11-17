@@ -1,0 +1,130 @@
+@font-face {
+    font-family: "PixelifySans-SemiBold";
+    src: url(../assets/fonts/Pixelify_Sans/PixelifySans-SemiBold.ttf)format(truetype);
+}
+
+@font-face {
+    font-family: "Daydream";
+    src: url(../assets/fonts/daydream_3/Daydream\ DEMO.otf)format(truetype);
+}
+
+body{
+    background-image: url('../assets/images/register-bg.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: flex;
+    justify-content: center; /* centra horizontal */
+    align-items: center;     /* centra vertical */
+    font-family: PixelifySans-SemiBold;
+}
+
+#datosJ{
+    margin-top: 30px;
+    display: none;
+}
+
+.contenedor{
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: #fdf0d5a8;
+    padding: 10px 20px;
+    border: 50px solid;
+    border-radius: 10%;
+    border-image: url(../assets/images/border-2.png) 33% round;
+}
+
+h1{
+    font-family: Daydream;
+    color: #437F97;
+    text-align: center;
+    margin: 0px;
+}
+
+.informacion{
+    display: flex;
+    justify-content: center;
+    margin: 30px 0px;
+}
+
+.datos{
+    margin-right: 40px;
+}
+
+label{
+    display: block;
+    width: 350px;
+    margin: 5px 0px;
+    font-size: 140%;
+    text-align: left;
+    color: #01295F;
+}
+
+p{
+    display: block;
+    margin: 5px 0px;
+    font-size: 140%;
+    color: #01295F;
+}
+
+input{
+    margin-bottom: 30px;
+    width: 350px;
+    height: 40px;
+    font-family: PixelifySans-SemiBold;
+    font-size: 130%;
+    text-align: left;
+    border: none;
+    background-color: #FDF0D5;
+    box-shadow: -4px 4px 0px 3px #437F97;
+}
+
+.usuario{
+    margin: 0px 50px;
+}
+
+img{
+    margin-top: 40px;
+}
+
+.avatar{
+    background-color: #01295F;
+    color: #FDF0D5;
+    width: 400px;
+    text-align: center;
+}
+
+.eleccion{
+    margin: 0px 25px;
+    text-align: center;
+    width: 400px;
+}
+
+.flammas{
+    background-color: #FDF0D5;
+    height: 250px;
+    margin-top: 20px;
+}
+
+button{
+    display: block;
+    font-family: PixelifySans-SemiBold;
+    font-size: 140%;
+    background-color: #849324;
+    color: #FDF0D5;
+    border: 20px solid;
+    border-radius: 25%;
+    border-image: url(../assets/images/border-1.png) 33% round;
+}
+
+button:hover{
+    background-color: #FD151B;
+    transform: scale(1.1);
+}
+
+a{
+    text-decoration: none;
+}

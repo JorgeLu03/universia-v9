@@ -1,0 +1,86 @@
+@font-face {
+    font-family: "PixelifySans-SemiBold";
+    src: url(../assets/fonts/Pixelify_Sans/PixelifySans-SemiBold.ttf)format(truetype);
+}
+
+@font-face {
+    font-family: "Daydream";
+    src: url(../assets/fonts/daydream_3/Daydream\ DEMO.otf)format(truetype);
+}
+
+body{
+    background-image: url('../assets/images/login-bg.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: flex;
+    justify-content: center; /* centra horizontal */
+    align-items: center;     /* centra vertical */
+    font-family: PixelifySans-SemiBold;
+}
+
+.contenedor{
+    margin-top: 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center; 
+    background-color: #fdf0d5a8;
+    padding: 20px 50px;
+    border: 50px solid;
+    border-radius: 10%;
+    border-image: url(../assets/images/border-2.png) 33% round;
+}
+
+h1{
+    margin-top: 10px;
+    font-family: Daydream;
+    color: #849324;
+    text-align: center;
+}
+
+label{
+    display: block;
+    width: 400px;
+    margin: 5px 0px;
+    font-size: 140%;
+    text-align: left;
+    color: #01295F;
+}
+
+input{
+    margin-bottom: 20px;
+    width: 400px;
+    height: 40px;
+    font-family: PixelifySans-SemiBold;
+    font-size: 130%;
+    text-align: left;
+    border: none;
+    background-color: #FDF0D5;
+    box-shadow: -4px 4px 0px 3px #849324;
+}
+
+button{
+    font-family: PixelifySans-SemiBold;
+    font-size: 140%;
+    background-color: #437F97;
+    color: #FDF0D5;
+    border: 30px solid;
+    border-radius: 25%;
+    border-image: url(../assets/images/border-1.png) 33% round;
+}
+
+button:hover{
+    background-color: #FD151B;
+    transform: scale(1.1);
+}
+
+p{
+    font-size: 120%;
+    color: #01295F;
+    margin-top: 30px;
+}
+
+a{
+    color: #849324;
+}

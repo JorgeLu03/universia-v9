@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Universia</title>
+  <link rel="stylesheet" href="css/game.css">
+
+</head>
+  <script src="js/background-music.js"></script>
+<body>
+  <div class="contenedor">
+    <a href="pause.html">
+      <button id="pause">PAUSA</button>
+    </a>
+    <div class="informacion"></div>
+
+    <div id="escena3D"></div>
+    
+    <!-- UI de Combate -->
+    <div id="battleUI" style="display: none; position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); padding: 20px; border-radius: 10px; color: white; width: 600px;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+        <!-- Jugador -->
+        <div style="flex: 1; margin-right: 10px;">
+          <h3 id="playerName" style="margin: 0 0 5px 0;">Unicornio</h3>
+          <div style="background: #333; height: 20px; border-radius: 5px; overflow: hidden;">
+            <div id="playerHP" style="background: #4CAF50; height: 100%; width: 100%; transition: width 0.3s;"></div>
+          </div>
+          <p id="playerHPText" style="margin: 5px 0 0 0; font-size: 14px;">HP: 100/100</p>
+        </div>
+        
+        <!-- Enemigo -->
+        <div style="flex: 1; margin-left: 10px;">
+          <h3 id="enemyName" style="margin: 0 0 5px 0;">Elefante</h3>
+          <div style="background: #333; height: 20px; border-radius: 5px; overflow: hidden;">
+            <div id="enemyHP" style="background: #f44336; height: 100%; width: 100%; transition: width 0.3s;"></div>
+          </div>
+          <p id="enemyHPText" style="margin: 5px 0 0 0; font-size: 14px;">HP: 100/100</p>
+        </div>
+      </div>
+      
+      <!-- Mensaje de batalla -->
+      <div id="battleMessage" style="background: #222; padding: 10px; border-radius: 5px; margin-bottom: 15px; min-height: 40px;">
+        <p style="margin: 0;">Presiona ATACAR para comenzar el combate</p>
+      </div>
+      
+      <!-- Botones de acción -->
+      <div id="battleActions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <button id="attackBtn" style="padding: 15px; font-size: 16px; cursor: pointer; background: #2196F3; color: white; border: none; border-radius: 5px;">ATACAR</button>
+        <button id="specialBtn" style="padding: 15px; font-size: 16px; cursor: pointer; background: #FF9800; color: white; border: none; border-radius: 5px;">ATAQUE ESPECIAL</button>
+        <button id="defendBtn" style="padding: 15px; font-size: 16px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 5px;">DEFENDER</button>
+        <button id="runBtn" style="padding: 15px; font-size: 16px; cursor: pointer; background: #f44336; color: white; border: none; border-radius: 5px;">HUIR</button>
+      </div>
+    </div>
+    
+    <!-- Indicador de interacción -->
+    <div id="interactPrompt" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.7); padding: 15px 30px; border-radius: 10px; color: white; font-size: 18px;">
+      Presiona <strong>E</strong> para iniciar combate
+    </div>
+  </div>
+
+  <script type="module">
+            // Sonido global de ataque para evitar problemas tras recarga
+            if (!window.attackAudio) {
+              window.attackAudio = new Audio('assets/Sonido/ATTACK.mp3');
+              window.attackAudio.volume = 1.0;
+            }
+        // --- AUDIO DE BATALLA Y ATAQUE (persistentes) ---
+        if (!window.battleMusic) {
+          window.battleMusic = new Audio('assets/Sonido/PELEA.mp3');
+          window.battleMusic.loop = true;
+          window.battleMusic.volume = 1.0;
+        }
+        function playBattleMusic() {
+          if (window.persistentMusic && window.persistentMusic.audio) {
+            window.persistentMusic.audio.pause();
+          }
+          window.battleMusic.currentTime = 0;
+          window.battleMusic.play();
+        }
+        function stopBattleMusic() {
+          if (window.battleMusic) {
+            window.battleMusic.pause();
+            window.battleMusic.currentTime = 0;
+          }
+          if (window.persistentMusic && window.persistentMusic.audio) {
+            window.persistentMusic.audio.play();
+          }
+        }
+        // Sonido global de ataque para evitar problemas tras recarga
+        if (!window.attackAudio) {
+          window.attackAudio = new Audio('assets/Sonido/ATTACK.mp3');
+          window.attackAudio.volume = 1.0;
+        }
+    import * as THREE from "./scene/three.module.js";
+    import { OrbitControls } from "./scene/OrbitControls.js";
+    import { STLLoader } from "./scene/STLLoader.js";
+    import { GLTFLoader } from "./scene/GLTFLoader.js";
+    import { Player } from "./js/player.js";
+
+    const contenedor = document.getElementById("escena3D");
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color("#34495E");
+
+    const camera = new THREE.PerspectiveCamera(
+      45,
+      contenedor.clientWidth / contenedor.clientHeight
+    );
+    camera.position.set(0, 30, -50);
+
+    // Variables de control del personaje
+    // Usar clase Player
+    const maxSpeed = 0.035;
+    const acceleration = 0.002;
+    const deceleration = 0.95;
+    const rotationSpeed = 0.1;
+    const playerRadius = 0.5;
+    let playerInstance = null;
+    let velocity = new THREE.Vector3();
+
+    // Variables de combate
+    let inBattle = false;
+    let nearbyEnemy = null;
+    const enemies = [];
+    const interactionDistance = 3;
+    
+    // Variables de colisiones
+    let scenarioModel = null;
+    const boundaryObjects = [];
+    const collisionHelpers = []; // Para debug visual
+    const enableCollisionDebug = true; // Activar visualización de colisiones y logs
+    
+    // Configuración de escala y posición del escenario (debe ser igual para ambos modelos)
+    const scenarioScale = 3;
+    const scenarioPosition = new THREE.Vector3(0, 0, 0);
+    
+    // Límites del escenario (ajustar según tu modelo)
+    const scenarioBounds = {
+      minX: -17,
+      maxX: 17,
+      minZ: -17,
+      maxZ: 17
+    };
+    
+    // Stats de combate
+    let playerStats = {
+      name: "Unicornio",
+      hp: 100,
+      maxHp: 100,
+      attack: 20,
+      defense: 10
+    };
+    
+    let enemyStats = {
+      name: "Enemigo",
+      hp: 100,
+      maxHp: 100,
+      attack: 15,
+      defense: 8
+    };
+    
+    let isPlayerTurn = true;
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(contenedor.clientWidth, contenedor.clientHeight);
+    contenedor.appendChild(renderer.domElement);
+
+    const hemisphereLight = new THREE.HemisphereLight(0xffffbb, 0x080820, 1);
+    scene.add(hemisphereLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(1, 5, -1);
+    scene.add(directionalLight);
+
+    // Visualizar límites del escenario (debug)
+    function createBoundaryWalls() {
+      return; // Desactivado temporalmente
+      const wallMaterial = new THREE.LineBasicMaterial({ color: 0xff0000, linewidth: 2 });
+      const points = [];
+      
+      // Crear rectángulo de límites
+      points.push(new THREE.Vector3(scenarioBounds.minX, 0, scenarioBounds.minZ));
+      points.push(new THREE.Vector3(scenarioBounds.maxX, 0, scenarioBounds.minZ));
+      points.push(new THREE.Vector3(scenarioBounds.maxX, 0, scenarioBounds.maxZ));
+      points.push(new THREE.Vector3(scenarioBounds.minX, 0, scenarioBounds.maxZ));
+      points.push(new THREE.Vector3(scenarioBounds.minX, 0, scenarioBounds.minZ));
+      
+      const geometry = new THREE.BufferGeometry().setFromPoints(points);
+      const line = new THREE.Line(geometry, wallMaterial);
+      scene.add(line);
+      
+      // Agregar líneas verticales en las esquinas
+      for (let i = 0; i < 4; i++) {
+        const vertPoints = [
+          new THREE.Vector3(points[i].x, 0, points[i].z),
+          new THREE.Vector3(points[i].x, 5, points[i].z)
+        ];
+        const vertGeometry = new THREE.BufferGeometry().setFromPoints(vertPoints);
+        const vertLine = new THREE.Line(vertGeometry, wallMaterial);
+        scene.add(vertLine);
+      }
+    }
+    createBoundaryWalls();
+
+    // const planeGeometry = new THREE.PlaneGeometry(50, 50);
+    // const planeMaterial = new THREE.MeshStandardMaterial({ color: "slategrey" });
+    // const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+    // plane.rotateX(-Math.PI / 2);
+    // scene.add(plane);
+
+    // //STL
+    // const loaderSTL = new STLLoader();
+    // loaderSTL.load("scene/deadMouse.stl", function (geometry) {
+    //   const material = new THREE.MeshPhongMaterial({ color: "red" });
+    //   const mesh = new THREE.Mesh(geometry, material);
+    //   mesh.rotateX(-Math.PI / 2);
+    //   mesh.scale.set(0.03, 0.03, 0.03);
+    //   scene.add(mesh);
+    // });
+
+    // Antorcha
+    const loaderGLB = new GLTFLoader();
+    loaderGLB.load("assets/models/torch.glb", function (model) {
+      const obj = model.scene;
+      obj.scale.set(4, 4, 4);
+      obj.position.set(0, 0, 0);
+      scene.add(obj);
+    });
+
+    // Escenario (Scenario1)
+    loaderGLB.load("assets/models/Scenario1.glb", function (model) {
+      scenarioModel = model.scene;
+      
+      // Calcular tamaño ORIGINAL del escenario (sin escala)
+      const originalScenarioBox = new THREE.Box3().setFromObject(scenarioModel);
+      const originalScenarioSize = new THREE.Vector3();
+      originalScenarioBox.getSize(originalScenarioSize);
+      
+      // Aplicar escala al escenario
+      scenarioModel.scale.set(scenarioScale, scenarioScale, scenarioScale);
+      scenarioModel.position.copy(scenarioPosition);
+      scene.add(scenarioModel);
+      
+      // Calcular el bounding box completo del escenario ESCALADO
+      const scenarioBox = new THREE.Box3().setFromObject(scenarioModel);
+      const scenarioSize = new THREE.Vector3();
+      scenarioBox.getSize(scenarioSize);
+      const scenarioCenter = new THREE.Vector3();
+      scenarioBox.getCenter(scenarioCenter);
+      
+      console.log(`✅ Escenario cargado`);
+      console.log(`   Tamaño original: ${originalScenarioSize.x.toFixed(2)} x ${originalScenarioSize.y.toFixed(2)} x ${originalScenarioSize.z.toFixed(2)}`);
+      console.log(`   Escala aplicada: ${scenarioScale}x`);
+      console.log(`   Posición: (${scenarioPosition.x}, ${scenarioPosition.y}, ${scenarioPosition.z})`);
+      console.log(`   Tamaño final: ${scenarioSize.x.toFixed(2)} x ${scenarioSize.y.toFixed(2)} x ${scenarioSize.z.toFixed(2)}`);
+      console.log(`   Centro: (${scenarioCenter.x.toFixed(2)}, ${scenarioCenter.y.toFixed(2)}, ${scenarioCenter.z.toFixed(2)})`);
+      
+      // Guardar información del escenario para ajustar colisiones
+      window.scenarioInfo = {
+        originalSize: originalScenarioSize.clone(),
+        scale: scenarioScale,
+        position: scenarioPosition.clone(),
+        size: scenarioSize.clone(),
+        center: scenarioCenter.clone()
+      };
+      
+      // Crear una sola caja de colisión del tamaño del escenario completo
+      const collisionGeometry = new THREE.BoxGeometry(scenarioSize.x, scenarioSize.y, scenarioSize.z);
+      const collisionMesh = new THREE.Mesh(collisionGeometry);
+      collisionMesh.position.copy(scenarioCenter);
+      collisionMesh.visible = false; // Invisible
+      collisionMesh.userData.isScenery = true;
+      scene.add(collisionMesh);
+      boundaryObjects.push(collisionMesh);
+      
+      // Debug: mostrar caja amarilla del tamaño exacto del escenario
+      if (enableCollisionDebug) {
+        const boxMaterial = new THREE.MeshBasicMaterial({ 
+          color: 0xffff00,
+          wireframe: true,
+          transparent: true,
+          opacity: 0.5
+        });
+        const boxHelper = new THREE.Mesh(collisionGeometry.clone(), boxMaterial);
+        boxHelper.position.copy(scenarioCenter);
+        scene.add(boxHelper);
+        collisionHelpers.push(boxHelper);
+        
+        console.log(`🟨 Caja de colisión creada del tamaño del escenario completo`);
+      }
+    });
+    
+    // Cargar modelo de colisiones internas (COLSC1)
+    loaderGLB.load("assets/models/COLSC1.glb", function (model) {
+      const collisionModel = model.scene;
+      
+      // Calcular tamaño ORIGINAL del modelo de colisiones (sin escala)
+      const originalCollisionBox = new THREE.Box3().setFromObject(collisionModel);
+      const originalCollisionSize = new THREE.Vector3();
+      originalCollisionBox.getSize(originalCollisionSize);
+      
+      // Calcular la escala necesaria para que coincida con el escenario
+      let calculatedScale = scenarioScale;
+      if (window.scenarioInfo && originalCollisionSize.x > 0 && originalCollisionSize.z > 0) {
+        // Calcular escala basada en el tamaño original del escenario
+        // Si el escenario original es más grande, necesitamos escalar más las colisiones
+        const scaleX = (window.scenarioInfo.originalSize.x / originalCollisionSize.x) * scenarioScale;
+        const scaleY = (window.scenarioInfo.originalSize.y / originalCollisionSize.y) * scenarioScale;
+        const scaleZ = (window.scenarioInfo.originalSize.z / originalCollisionSize.z) * scenarioScale;
+        // Usar el promedio de las escalas para mantener proporciones
+        calculatedScale = (scaleX + scaleY + scaleZ) / 3;
+        // Validar existencia antes de loguear
+        if (window.scenarioInfo && window.scenarioInfo.originalSize) {
+          console.log(`📐 Cálculo de escala para colisiones:`);
+          console.log(`   Tamaño original escenario: ${window.scenarioInfo.originalSize.x.toFixed(2)} x ${window.scenarioInfo.originalSize.y.toFixed(2)} x ${window.scenarioInfo.originalSize.z.toFixed(2)}`);
+          console.log(`   Tamaño original colisiones: ${originalCollisionSize.x.toFixed(2)} x ${originalCollisionSize.y.toFixed(2)} x ${originalCollisionSize.z.toFixed(2)}`);
+          console.log(`   Escala calculada: ${calculatedScale.toFixed(4)}x (vs ${scenarioScale}x del escenario)`);
+        }
+      }
+      
+      // Aplicar la escala calculada al modelo de colisiones
+      collisionModel.scale.set(calculatedScale, calculatedScale, calculatedScale);
+      collisionModel.position.copy(scenarioPosition);
+      
+      // Verificar el tamaño final después de aplicar la escala
+      const finalCollisionBox = new THREE.Box3().setFromObject(collisionModel);
+      const finalCollisionSize = new THREE.Vector3();
+      finalCollisionBox.getSize(finalCollisionSize);
+      
+      console.log(`✅ Modelo de colisiones internas cargado`);
+      console.log(`   Escala aplicada: ${calculatedScale.toFixed(4)}x`);
+      console.log(`   Posición: (${scenarioPosition.x}, ${scenarioPosition.y}, ${scenarioPosition.z})`);
+      console.log(`   Tamaño final: ${finalCollisionSize.x.toFixed(2)} x ${finalCollisionSize.y.toFixed(2)} x ${finalCollisionSize.z.toFixed(2)}`);
+      
+      if (window.scenarioInfo) {
+        const sizeMatchX = Math.abs(finalCollisionSize.x - window.scenarioInfo.size.x) < 1;
+        const sizeMatchZ = Math.abs(finalCollisionSize.z - window.scenarioInfo.size.z) < 1;
+        console.log(`   Comparación con escenario:`);
+        console.log(`   X: ${finalCollisionSize.x.toFixed(2)} vs ${window.scenarioInfo.size.x.toFixed(2)} ${sizeMatchX ? '✓' : '✗'}`);
+        console.log(`   Z: ${finalCollisionSize.z.toFixed(2)} vs ${window.scenarioInfo.size.z.toFixed(2)} ${sizeMatchZ ? '✓' : '✗'}`);
+      }
+      
+      let collisionCount = 0;
+      const minCollisionSize = 0.1; // Tamaño mínimo para considerar una colisión válida
+      
+      // Procesar cada mesh del modelo de colisiones
+      collisionModel.traverse((child) => {
+        if (child.isMesh && child.geometry) {
+          // Obtener el bounding box del mesh para verificar su tamaño
+          const box = new THREE.Box3().setFromObject(child);
+          const size = new THREE.Vector3();
+          box.getSize(size);
+          const center = new THREE.Vector3();
+          box.getCenter(center);
+          
+          // Filtrar meshes que sean demasiado pequeños o estén en el centro exacto (probablemente contenedores vacíos)
+          // Solo agregar meshes con un tamaño mínimo razonable
+          if (size.x > minCollisionSize && size.y > minCollisionSize && size.z > minCollisionSize) {
+            // Verificar si está cerca del centro (0,0,0) - podría ser un contenedor vacío
+            const distanceFromCenter = Math.sqrt(center.x * center.x + center.y * center.y + center.z * center.z);
+            const isAtCenter = distanceFromCenter < 0.5; // Si está muy cerca del centro
+            
+            // Solo agregar si tiene un tamaño razonable Y no está en el centro exacto
+            // O si está en el centro pero tiene un tamaño significativo (más de 1 unidad)
+            if (!isAtCenter || (size.x > 1 || size.y > 1 || size.z > 1)) {
+              // Hacer invisible el mesh de colisión original
+              child.visible = false;
+              child.userData.isScenery = true;
+              child.userData.isInternalCollision = true;
+              boundaryObjects.push(child);
+              collisionCount++;
+              
+              // Crear helper visual de colisión (wireframe para debug)
+              if (enableCollisionDebug) {
+                // Crear geometría de caja con el tamaño exacto
+                const boxGeometry = new THREE.BoxGeometry(size.x, size.y, size.z);
+                
+                // Material wireframe rojo para colisiones internas
+                const boxMaterial = new THREE.MeshBasicMaterial({ 
+                  color: 0xff0000, // Rojo para distinguir de las colisiones de borde
+                  wireframe: true,
+                  transparent: true,
+                  opacity: 0.8
+                });
+                
+                const boxHelper = new THREE.Mesh(boxGeometry, boxMaterial);
+                boxHelper.position.copy(center);
+                boxHelper.rotation.copy(child.rotation);
+                scene.add(boxHelper);
+                collisionHelpers.push(boxHelper);
+                
+                console.log(`🔴 Colisión interna ${collisionCount}: Tamaño (${size.x.toFixed(2)}, ${size.y.toFixed(2)}, ${size.z.toFixed(2)}), Centro (${center.x.toFixed(2)}, ${center.y.toFixed(2)}, ${center.z.toFixed(2)})`);
+              }
+            } else {
+              // Mesh filtrado (probablemente contenedor vacío en el centro)
+              if (enableCollisionDebug) {
+                console.log(`⚪ Mesh filtrado (centro vacío): Tamaño (${size.x.toFixed(2)}, ${size.y.toFixed(2)}, ${size.z.toFixed(2)}), Centro (${center.x.toFixed(2)}, ${center.y.toFixed(2)}, ${center.z.toFixed(2)})`);
+              }
+            }
+          }
+        }
+      });
+      
+      scene.add(collisionModel);
+      console.log(`✅ Total de objetos de colisión interna cargados: ${collisionCount}`);
+    }, undefined, function(error) {
+      console.warn("⚠️ No se encontró modelo de colisiones internas (COLSC1.glb)");
+      console.error("Error:", error);
+    });
+
+    // Abeja - Enemigo
+    loaderGLB.load("assets/models/bee_cartoon.glb", function (model) {
+      const obj = model.scene;
+      obj.scale.set(0.5, 0.5, 0.5);
+      obj.position.set(6, 2, 0);
+      obj.userData.enemyName = "Abeja";
+      obj.userData.isEnemy = true;
+      scene.add(obj);
+      enemies.push(obj);
+    });
+
+    // Oso - Enemigo
+      loaderGLB.load("assets/models/ice_bear_we_bare_bears.glb", function (model) {
+        const obj = model.scene;
+        obj.scale.set(0.4, 0.4, 0.4);
+        obj.position.set(10, 1.5, 7);
+        obj.rotation.y = -Math.PI / 2; // Girar a la izquierda 90° en Y
+        obj.userData.enemyName = "Oso";
+        obj.userData.isEnemy = true;
+        obj.userData.detectionRange = 8;
+        obj.userData.chaseSpeed = 0.08;
+        obj.userData.originalPosition = obj.position.clone();
+        obj.userData.isChasing = false;
+        obj.userData.isAggressive = true;
+        scene.add(obj);
+        enemies.push(obj);
+          // --- IA de enemigos agresivos (oso) ---
+          function updateAggressiveEnemies() {
+            if (!playerInstance || !playerInstance.playerLoaded || inBattle) return;
+            const playerObj = playerInstance.getObject();
+            enemies.forEach(enemy => {
+              if (!enemy.userData.isAggressive) return;
+              const distance = playerObj.position.distanceTo(enemy.position);
+              const detectionRange = enemy.userData.detectionRange || 8;
+              const chaseSpeed = enemy.userData.chaseSpeed || 0.08;
+              const attackRange = interactionDistance;
+              if (distance <= detectionRange && distance > attackRange) {
+                enemy.userData.isChasing = true;
+                const direction = new THREE.Vector3().subVectors(playerObj.position, enemy.position).normalize();
+                const newPosition = enemy.position.clone();
+                newPosition.x += direction.x * chaseSpeed;
+                newPosition.z += direction.z * chaseSpeed;
+                // No colisión para simplificar
+                enemy.position.x += direction.x * chaseSpeed;
+                enemy.position.z += direction.z * chaseSpeed;
+                const targetRotation = Math.atan2(direction.x, direction.z);
+                enemy.rotation.y = targetRotation;
+              } else if (distance <= attackRange) {
+                if (!inBattle) {
+                  startBattle(enemy);
+                }
+                enemy.userData.isChasing = false;
+              } else {
+                enemy.userData.isChasing = false;
+              }
+            });
+          }
+      });
+      
+    // Tucan - Enemigo
+    loaderGLB.load("assets/models/low_poly_toucan.glb", function (model) {
+      const obj = model.scene;
+      obj.rotateY(-Math.PI / 2);
+      obj.scale.set(0.12, 0.12, 0.12);
+      obj.position.set(-10, 0, 0);
+      obj.userData.enemyName = "Tucán";
+      obj.userData.isEnemy = true;
+      scene.add(obj);
+      enemies.push(obj);
+    });
+
+    // Elephant Anim - Enemigo
+    let mixer;
+    const animScene = new GLTFLoader();
+    animScene.load("assets/models/elephant.glb", function (model) {
+      const obj = model.scene;
+      obj.rotateY(-Math.PI / 2);
+      obj.scale.set(1.6, 1.6, 1.6);
+      obj.position.set(10, 0, -8.66);
+      obj.userData.enemyName = "Elefante";
+      obj.userData.isEnemy = true;
+      scene.add(obj);
+      enemies.push(obj);
+
+      mixer = new THREE.AnimationMixer(obj);
+      const action = mixer.clipAction(model.animations[0]);
+      action.play();
+    });
+
+    // Unicorn como personaje jugable
+    // Cargar personaje desde player.js
+    playerInstance = new Player(
+      scene,
+      scenarioBounds,
+      playerRadius,
+      acceleration,
+      maxSpeed,
+      deceleration,
+      rotationSpeed
+    );
+    playerInstance.loadPlayerModel();
+
+    // Owl Anim
+    let mixer2;
+    animScene.load("assets/models/day_20_-_snowy_owl.glb", function (model) {
+      const obj = model.scene;
+      obj.scale.set(1.5, 1.5, 1.5);
+      obj.position.set(-5, 2, -8.66);
+      scene.add(obj);
+
+      mixer2 = new THREE.AnimationMixer(obj);
+      const action2 = mixer2.clipAction(model.animations[0]);
+      action2.play();
+    });
+
+
+    // Desactivar OrbitControls para permitir controles de personaje
+    // const cameraControl = new OrbitControls(camera, renderer.domElement);
+
+    // Controles de teclado
+    window.addEventListener('keydown', (e) => {
+      const key = e.key.toLowerCase();
+      if (key === 'w' || key === 'arrowup') playerInstance.setKey('w', true);
+      if (key === 'a' || key === 'arrowleft') playerInstance.setKey('a', true);
+      if (key === 's' || key === 'arrowdown') playerInstance.setKey('s', true);
+      if (key === 'd' || key === 'arrowright') playerInstance.setKey('d', true);
+      if (key === 'e') {
+        // Iniciar combate si hay un enemigo cerca
+        if (nearbyEnemy && !inBattle) {
+          startBattle(nearbyEnemy);
+        }
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      const key = e.key.toLowerCase();
+      if (key === 'w' || key === 'arrowup') playerInstance.setKey('w', false);
+      if (key === 'a' || key === 'arrowleft') playerInstance.setKey('a', false);
+      if (key === 's' || key === 'arrowdown') playerInstance.setKey('s', false);
+      if (key === 'd' || key === 'arrowright') playerInstance.setKey('d', false);
+    });
+
+    // Función de actualización de movimiento del personaje
+    function updatePlayerMovement() {
+      if (!playerInstance || !playerInstance.playerLoaded || inBattle) return;
+      playerInstance.updateMovement();
+      // Corregir posición si hay colisión con el escenario
+      pushPlayerOutOfCollisions();
+    }
+
+    // Función para detectar colisiones con objetos del escenario
+    // Si necesitas colisiones, adapta aquí para usar playerInstance.getObject()
+    function checkSceneryCollision() {
+      if (!playerInstance || !playerInstance.playerLoaded || boundaryObjects.length === 0) {
+        return false;
+      }
+      const playerObj = playerInstance.getObject();
+      const playerBox = new THREE.Box3().setFromObject(playerObj);
+      for (let i = 0; i < boundaryObjects.length; i++) {
+        const obj = boundaryObjects[i];
+        if (obj.userData.isInternalCollision) {
+          const objBox = new THREE.Box3().setFromObject(obj);
+          if (playerBox.intersectsBox(objBox)) {
+            if (enableCollisionDebug) {
+              console.log(`🔴 COLISIÓN detectada con objeto interno ${i}`);
+            }
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+    
+    // Función para verificar colisiones en una posición específica
+    function checkSceneryCollisionAtPosition(position) {
+      if (!playerInstance || !playerInstance.playerLoaded || boundaryObjects.length === 0) {
+        return false;
+      }
+      const playerObj = playerInstance.getObject();
+      const originalPosition = playerObj.position.clone();
+      playerObj.position.copy(position);
+      const playerBox = new THREE.Box3().setFromObject(playerObj);
+      let hasCollision = false;
+      for (let i = 0; i < boundaryObjects.length; i++) {
+        const obj = boundaryObjects[i];
+        if (obj.userData.isInternalCollision) {
+          const objBox = new THREE.Box3().setFromObject(obj);
+          if (playerBox.intersectsBox(objBox)) {
+            hasCollision = true;
+            break;
+          }
+        }
+      }
+      playerObj.position.copy(originalPosition);
+      return hasCollision;
+    }
+    
+    // Función para empujar al jugador fuera de colisiones
+    function pushPlayerOutOfCollisions() {
+      if (!playerInstance || !playerInstance.playerLoaded || boundaryObjects.length === 0) {
+        return;
+      }
+      const playerObj = playerInstance.getObject();
+      const playerBox = new THREE.Box3().setFromObject(playerObj);
+      const pushDistance = 0.1;
+      const maxIterations = 10;
+      const originalY = playerObj.position.y;
+      for (let iteration = 0; iteration < maxIterations; iteration++) {
+        let collisionFound = false;
+        let pushDirectionX = 0;
+        let pushDirectionZ = 0;
+        for (let i = 0; i < boundaryObjects.length; i++) {
+          const obj = boundaryObjects[i];
+          if (obj.userData.isInternalCollision) {
+            const objBox = new THREE.Box3().setFromObject(obj);
+            if (playerBox.intersectsBox(objBox)) {
+              collisionFound = true;
+              const objCenter = new THREE.Vector3();
+              objBox.getCenter(objCenter);
+              const playerCenter = new THREE.Vector3();
+              playerBox.getCenter(playerCenter);
+              const dx = playerCenter.x - objCenter.x;
+              const dz = playerCenter.z - objCenter.z;
+              const distance2D = Math.sqrt(dx * dx + dz * dz);
+              if (distance2D > 0.001) {
+                pushDirectionX += dx / distance2D;
+                pushDirectionZ += dz / distance2D;
+              } else {
+                pushDirectionX += (Math.random() - 0.5) * 0.1;
+                pushDirectionZ += (Math.random() - 0.5) * 0.1;
+              }
+            }
+          }
+        }
+        if (!collisionFound) {
+          break;
+        }
+        const pushLength = Math.sqrt(pushDirectionX * pushDirectionX + pushDirectionZ * pushDirectionZ);
+        if (pushLength > 0.001) {
+          pushDirectionX = (pushDirectionX / pushLength) * pushDistance;
+          pushDirectionZ = (pushDirectionZ / pushLength) * pushDistance;
+          playerObj.position.x += pushDirectionX;
+          playerObj.position.z += pushDirectionZ;
+          playerObj.position.y = originalY;
+        } else {
+          break;
+        }
+      }
+      playerObj.position.y = originalY;
+    }
+
+    // Detectar enemigos cercanos
+    function checkNearbyEnemies() {
+      if (!playerInstance || !playerInstance.playerLoaded || inBattle) return;
+      
+      nearbyEnemy = null;
+      let closestDistance = interactionDistance;
+      const playerObj = playerInstance.getObject();
+      if (!playerObj) return;
+      enemies.forEach(enemy => {
+        const distance = playerObj.position.distanceTo(enemy.position);
+        if (distance < closestDistance) {
+          nearbyEnemy = enemy;
+          closestDistance = distance;
+        }
+      });
+      
+      // Mostrar/ocultar prompt de interacción
+      const prompt = document.getElementById('interactPrompt');
+      if (nearbyEnemy) {
+        prompt.style.display = 'block';
+      } else {
+        prompt.style.display = 'none';
+      }
+    }
+
+    // Iniciar batalla
+    function startBattle(enemy) {
+      inBattle = true;
+      velocity.set(0, 0, 0); // Detener movimiento
+
+      playBattleMusic();
+      
+      // Resetear stats
+      playerStats.hp = playerStats.maxHp;
+      enemyStats.name = enemy.userData.enemyName;
+      enemyStats.hp = enemyStats.maxHp;
+      
+      // Mostrar UI de batalla
+      document.getElementById('battleUI').style.display = 'block';
+      document.getElementById('interactPrompt').style.display = 'none';
+      
+      // Actualizar nombres
+      document.getElementById('playerName').textContent = playerStats.name;
+      document.getElementById('enemyName').textContent = enemyStats.name;
+      
+      updateBattleUI();
+      showMessage(`¡Un ${enemyStats.name} salvaje apareció!`);
+      
+      isPlayerTurn = true;
+    }
+
+    // Actualizar UI de batalla
+    function updateBattleUI() {
+      const playerHPPercent = (playerStats.hp / playerStats.maxHp) * 100;
+      const enemyHPPercent = (enemyStats.hp / enemyStats.maxHp) * 100;
+      
+      document.getElementById('playerHP').style.width = playerHPPercent + '%';
+      document.getElementById('enemyHP').style.width = enemyHPPercent + '%';
+      
+      document.getElementById('playerHPText').textContent = `HP: ${Math.max(0, playerStats.hp)}/${playerStats.maxHp}`;
+      document.getElementById('enemyHPText').textContent = `HP: ${Math.max(0, enemyStats.hp)}/${enemyStats.maxHp}`;
+    }
+
+    // Mostrar mensaje de batalla
+    function showMessage(message) {
+      document.getElementById('battleMessage').innerHTML = `<p style="margin: 0;">${message}</p>`;
+    }
+
+    // Sistema de ataque
+    function playerAttack() {
+      if (!isPlayerTurn) return;
+      // Sonido de ataque
+      try {
+        window.attackAudio.currentTime = 0;
+        window.attackAudio.play();
+      } catch (e) { console.warn('No se pudo reproducir el sonido de ataque', e); }
+
+      const damage = Math.max(5, playerStats.attack - enemyStats.defense + Math.floor(Math.random() * 10));
+      enemyStats.hp -= damage;
+
+      showMessage(`${playerStats.name} atacó e hizo ${damage} de daño!`);
+      updateBattleUI();
+      
+      if (enemyStats.hp <= 0) {
+        endBattle(true);
+      } else {
+        isPlayerTurn = false;
+        setTimeout(enemyAttack, 1500);
+      }
+    }
+
+    function playerSpecialAttack() {
+      if (!isPlayerTurn) return;
+      // Sonido de ataque especial
+      try {
+        window.attackAudio.currentTime = 0;
+        window.attackAudio.play();
+      } catch (e) { console.warn('No se pudo reproducir el sonido de ataque', e); }
+
+      const damage = Math.max(10, playerStats.attack * 1.5 - enemyStats.defense + Math.floor(Math.random() * 15));
+      enemyStats.hp -= damage;
+
+      showMessage(`¡${playerStats.name} usó Ataque Especial e hizo ${damage} de daño!`);
+      updateBattleUI();
+      
+      if (enemyStats.hp <= 0) {
+        endBattle(true);
+      } else {
+        isPlayerTurn = false;
+        setTimeout(enemyAttack, 1500);
+      }
+    }
+
+    function playerDefend() {
+      if (!isPlayerTurn) return;
+      
+      showMessage(`${playerStats.name} se preparó para defenderse...`);
+      playerStats.defense += 5;
+      
+      isPlayerTurn = false;
+      setTimeout(() => {
+        enemyAttack();
+        playerStats.defense -= 5;
+      }, 1500);
+    }
+
+    function enemyAttack() {
+      const damage = Math.max(3, enemyStats.attack - playerStats.defense + Math.floor(Math.random() * 8));
+      playerStats.hp -= damage;
+      
+      showMessage(`¡${enemyStats.name} contraatacó e hizo ${damage} de daño!`);
+      updateBattleUI();
+      
+      if (playerStats.hp <= 0) {
+        endBattle(false);
+      } else {
+        isPlayerTurn = true;
+      }
+    }
+
+    function runFromBattle() {
+      const escapeChance = Math.random();
+      if (escapeChance > 0.5) {
+        showMessage(`¡Escapaste con éxito!`);
+        setTimeout(() => endBattle(false), 1000);
+      } else {
+        showMessage(`¡No pudiste escapar!`);
+        isPlayerTurn = false;
+        setTimeout(enemyAttack, 1500);
+      }
+    }
+
+    function endBattle(won) {
+      setTimeout(() => {
+        if (won) {
+          alert(`¡Ganaste! Has derrotado a ${enemyStats.name}`);
+          // Eliminar enemigo del escenario y del arreglo
+          const defeatedEnemy = enemies.find(e => e.userData.enemyName === enemyStats.name);
+          if (defeatedEnemy) {
+            scene.remove(defeatedEnemy);
+            const idx = enemies.indexOf(defeatedEnemy);
+            if (idx !== -1) enemies.splice(idx, 1);
+          }
+        } else {
+          alert(`Has perdido el combate...`);
+        }
+        document.getElementById('battleUI').style.display = 'none';
+        inBattle = false;
+        stopBattleMusic();
+      }, 1500);
+    }
+
+    // --- IA de enemigos agresivos (oso) ---
+    function updateAggressiveEnemies() {
+      if (!playerInstance || !playerInstance.playerLoaded || inBattle) return;
+      const playerObj = playerInstance.getObject();
+      enemies.forEach(enemy => {
+        if (!enemy.userData.isAggressive) return;
+        const distance = playerObj.position.distanceTo(enemy.position);
+        const detectionRange = enemy.userData.detectionRange || 8;
+        const chaseSpeed = enemy.userData.chaseSpeed || 0.08;
+        const attackRange = interactionDistance;
+        if (distance <= detectionRange && distance > attackRange) {
+          enemy.userData.isChasing = true;
+          const direction = new THREE.Vector3().subVectors(playerObj.position, enemy.position).normalize();
+          const newPosition = enemy.position.clone();
+          newPosition.x += direction.x * chaseSpeed;
+          newPosition.z += direction.z * chaseSpeed;
+          // No colisión para simplificar
+          enemy.position.x += direction.x * chaseSpeed;
+          enemy.position.z += direction.z * chaseSpeed;
+          const targetRotation = Math.atan2(direction.x, direction.z);
+          enemy.rotation.y = targetRotation;
+        } else if (distance <= attackRange) {
+          if (!inBattle) {
+            startBattle(enemy);
+          }
+          enemy.userData.isChasing = false;
+        } else {
+          enemy.userData.isChasing = false;
+        }
+      });
+    }
+
+    // Event listeners para botones de batalla
+    document.getElementById('attackBtn').addEventListener('click', playerAttack);
+    document.getElementById('specialBtn').addEventListener('click', playerSpecialAttack);
+    document.getElementById('defendBtn').addEventListener('click', playerDefend);
+    document.getElementById('runBtn').addEventListener('click', runFromBattle);
+
+    // Actualizar posición de cámara en tercera persona
+    function updateCamera() {
+      if (!playerInstance || !playerInstance.playerLoaded) return;
+      const playerObj = playerInstance.getObject();
+      camera.position.x = playerObj.position.x;
+      camera.position.y = playerObj.position.y + 8;
+      camera.position.z = playerObj.position.z - 10;
+      camera.lookAt(playerObj.position);
+    }
+
+    // Loop de animación unificado
+    const clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      const delta = clock.getDelta();
+      if (mixer) mixer.update(delta);
+      if (mixer2) mixer2.update(delta);
+      if (playerInstance && playerInstance.playerLoaded) playerInstance.updateMixer(delta);
+      updatePlayerMovement();
+      updateAggressiveEnemies();
+      checkNearbyEnemies();
+      updateCamera();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener("resize", () => {
+      camera.aspect = contenedor.clientWidth / contenedor.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(contenedor.clientWidth, contenedor.clientHeight);
+    });
+  </script>
+</body>
+</html>

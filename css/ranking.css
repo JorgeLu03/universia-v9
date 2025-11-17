@@ -1,0 +1,84 @@
+@font-face {
+    font-family: "PixelifySans-SemiBold";
+    src: url(../assets/fonts/Pixelify_Sans/PixelifySans-SemiBold.ttf)format(truetype);
+}
+
+@font-face {
+    font-family: "Daydream";
+    src: url(../assets/fonts/daydream_3/Daydream\ DEMO.otf)format(truetype);
+}
+
+body {
+    background-image: url('../assets/images/ranking-bg.png');
+    background-size: cover;
+    background-position: center;
+    font-family: PixelifySans-SemiBold;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow: hidden;
+}
+
+.top {
+    margin-top: 60px;
+    text-align: center;
+}
+
+h1 {
+    color: #FDF0D5;
+    font-family: Daydream;
+    font-size: 380%;
+    text-shadow: 2px 2px 6px #01295F;
+}
+
+.ranking-container {
+    background-color: rgba(0, 0, 0, 0.65);
+    border: 4px solid #FDF0D5;
+    border-radius: 12px;
+    padding: 20px 30px;
+    margin: 40px 0;
+    width: 340px;
+}
+
+.ranking-container ol {
+    list-style: decimal;
+    color: #FDF0D5;
+    font-size: 140%;
+    padding-left: 25px;
+}
+
+.ranking-container li {
+    margin: 12px 0;
+}
+
+.jugador {
+    color: #FFB30F;
+    font-weight: bold;
+}
+
+.puntos {
+    color: #FDF0D5;
+}
+
+.bottom {
+    display: flex;
+    flex-direction: column;
+    margin-top: 40px;
+}
+
+button{
+    margin: 10px;
+    width: 250px;
+    font-family: PixelifySans-SemiBold;
+    font-size: 160%;
+    color: #FDF0D5;
+    border: 30px solid;
+    border-radius: 25%;
+    border-image: url(../assets/images/border-1.png) 33% round;
+    background-color: #849324;
+}
+
+button:hover {
+    background-color: #437F97;
+    transform: scale(1.1);
+}

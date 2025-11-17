@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Nivel 3</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+    <div class="contenedor">
+        <a href="pause.html">
+            <button id="pause">PAUSA</button>
+        </a>
+        <div class="informacion"></div>
+
+        <div id="escena3D"></div>
+        <!-- UI de Combate -->
+        <div id="battleUI" style="display: none; position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); padding: 20px; border-radius: 10px; color: white; width: 600px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                <!-- Jugador -->
+                <div style="flex: 1; margin-right: 10px;">
+                    <h3 id="playerName" style="margin: 0 0 5px 0;">Unicornio</h3>
+                    <div style="background: #333; height: 20px; border-radius: 5px; overflow: hidden;">
+                        <div id="playerHP" style="background: #4CAF50; height: 100%; width: 100%; transition: width 0.3s;"></div>
+                    </div>
+                    <p id="playerHPText" style="margin: 5px 0 0 0; font-size: 14px;">HP: 100/100</p>
+                </div>
+                <!-- Enemigo -->
+                <div style="flex: 1; margin-left: 10px;">
+                    <h3 id="enemyName" style="margin: 0 0 5px 0;">Elefante</h3>
+                    <div style="background: #333; height: 20px; border-radius: 5px; overflow: hidden;">
+                        <div id="enemyHP" style="background: #f44336; height: 100%; width: 100%; transition: width 0.3s;"></div>
+                    </div>
+                    <p id="enemyHPText" style="margin: 5px 0 0 0; font-size: 14px;">HP: 100/100</p>
+                </div>
+            </div>
+            <!-- Mensaje de batalla -->
+            <div id="battleMessage" style="background: #222; padding: 10px; border-radius: 5px; margin-bottom: 15px; min-height: 40px;">
+                <p style="margin: 0;">Presiona ATACAR para comenzar el combate</p>
+            </div>
+            <!-- Botones de acción -->
+            <div id="battleActions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <button id="attackBtn" style="padding: 15px; font-size: 16px; cursor: pointer; background: #2196F3; color: white; border: none; border-radius: 5px;">ATACAR</button>
+                <button id="specialBtn" style="padding: 15px; font-size: 16px; cursor: pointer; background: #FF9800; color: white; border: none; border-radius: 5px;">ATAQUE ESPECIAL</button>
+                <button id="defendBtn" style="padding: 15px; font-size: 16px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 5px;">DEFENDER</button>
+                <button id="runBtn" style="padding: 15px; font-size: 16px; cursor: pointer; background: #f44336; color: white; border: none; border-radius: 5px;">HUIR</button>
+            </div>
+        </div>
+        <!-- Indicador de interacción -->
+        <div id="interactPrompt" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.7); padding: 15px 30px; border-radius: 10px; color: white; font-size: 18px;">
+            Presiona <strong>E</strong> para iniciar combate
+        </div>
+    </div>
+    <script type="module" src="js/game-level3.js"></script>
+    <script src="js/background-music.js"></script>
+</body>
+</html>
