@@ -96,6 +96,7 @@
     import { OrbitControls } from "./scene/OrbitControls.js";
     import { STLLoader } from "./scene/STLLoader.js";
     import { GLTFLoader } from "./scene/GLTFLoader.js";
+    import { RGBELoader } from "./assets/Light/RGBELoader.js";
     import { Player } from "./js/player.js";
     import { awardScoreForLevel } from "./js/score-service.js";
 
@@ -165,8 +166,25 @@
     let level1ScoreSaved = false;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 0.3;
     renderer.setSize(contenedor.clientWidth, contenedor.clientHeight);
     contenedor.appendChild(renderer.domElement);
+
+    const pmremGenerator = new THREE.PMREMGenerator(renderer);
+    pmremGenerator.compileEquirectangularShader();
+
+    new RGBELoader()
+      .load("assets/Light/HDRI.hdr", (texture) => {
+        const envMap = pmremGenerator.fromEquirectangular(texture).texture;
+        scene.environment = envMap;
+        scene.background = envMap;
+        texture.dispose();
+        pmremGenerator.dispose();
+      }, undefined, (error) => {
+        console.error("[level1] No se pudo cargar la HDRI", error);
+      });
 
     const hemisphereLight = new THREE.HemisphereLight(0xffffbb, 0x080820, 1);
     scene.add(hemisphereLight);
@@ -174,6 +192,10 @@
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(1, 5, -1);
     scene.add(directionalLight);
+
+    const keyLight = new THREE.PointLight(0xfff2d3, 1.2, 100);
+    keyLight.position.set(0, 10, 0);
+    scene.add(keyLight);
 
     // Visualizar límites del escenario (debug)
     function createBoundaryWalls() {

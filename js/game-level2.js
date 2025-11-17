@@ -2,6 +2,7 @@ import * as THREE from "../scene/three.module.js";
 import { OrbitControls } from "../scene/OrbitControls.js";
 import { STLLoader } from "../scene/STLLoader.js";
 import { GLTFLoader } from "../scene/GLTFLoader.js";
+import { RGBELoader } from "../assets/Light/RGBELoader.js";
 import { Player } from "./player.js";
 import { setupBattleSystem } from "./battle.js";
 import { awardScoreForLevel } from "./score-service.js";
@@ -72,8 +73,25 @@ let isPlayerTurn = true;
 let level2ScoreSaved = false;
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.4;
 renderer.setSize(contenedor.clientWidth, contenedor.clientHeight);
 contenedor.appendChild(renderer.domElement);
+
+const pmremGenerator = new THREE.PMREMGenerator(renderer);
+pmremGenerator.compileEquirectangularShader();
+
+new RGBELoader()
+	.load("assets/Light/HDRI.hdr", (texture) => {
+		const envMap = pmremGenerator.fromEquirectangular(texture).texture;
+		scene.environment = envMap;
+		scene.background = envMap;
+		texture.dispose();
+		pmremGenerator.dispose();
+	}, undefined, (error) => {
+		console.error("[level2] No se pudo cargar la HDRI", error);
+	});
 
 const hemisphereLight = new THREE.HemisphereLight(0xffffbb, 0x080820, 1);
 scene.add(hemisphereLight);
