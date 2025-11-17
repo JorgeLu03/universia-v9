@@ -1,4 +1,7 @@
 (function() {
+    if (window.top && window.top !== window) {
+        return;
+    }
     // Use a global object to ensure the script only initializes once per page,
     // and to hold the audio element.
     if (!window.persistentMusic) {

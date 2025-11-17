@@ -6,6 +6,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const volumeSlider = document.getElementById('volume');
   const usernameInput = document.getElementById('username');
   const saveBtn = document.getElementById('save-settings');
+  const backBtn = document.getElementById('back-settings');
+  const isEmbedded = window.top && window.top !== window;
+  const eventTarget = (window.top && window.top !== window) ? window.top : window;
+  const backBtn = document.getElementById('back-settings');
 
   let currentUser = null;
 
@@ -19,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const volumeChange = new CustomEvent('universia-volume-change', {
         detail: normalized
       });
-      window.dispatchEvent(volumeChange);
+      eventTarget.dispatchEvent(volumeChange);
     });
   }
 
@@ -54,6 +58,14 @@ document.addEventListener('DOMContentLoaded', () => {
       alert('No se pudo actualizar: ' + error.message);
     } finally {
       saveBtn.disabled = false;
+    }
+  });
+
+  backBtn?.addEventListener('click', () => {
+    if (isEmbedded) {
+      window.top?.postMessage('close-settings-overlay', '*');
+    } else {
+      window.history.back();
     }
   });
 });

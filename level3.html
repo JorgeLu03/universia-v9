@@ -8,9 +8,22 @@
 </head>
 <body>
     <div class="contenedor">
-        <a href="pause.html">
-            <button id="pause">PAUSA</button>
-        </a>
+        <button id="pause">PAUSA</button>
+        <div id="pauseOverlay" class="overlay-backdrop">
+            <div class="overlay-menu">
+                <button id="resumeBtn">CONTINUAR</button>
+                <button id="settingsBtn">CONFIGURACIÓN</button>
+                <button id="exitBtn">SALIR AL MENÚ</button>
+            </div>
+        </div>
+        <div id="settingsOverlay" class="overlay-backdrop">
+            <div class="settings-panel">
+                <h2>Ajustes Rápidos</h2>
+                <label for="overlayVolume">Volumen</label>
+                <input type="range" id="overlayVolume" min="0" max="100" value="80">
+                <button id="closeSettingsBtn">VOLVER</button>
+            </div>
+        </div>
         <div class="informacion"></div>
 
         <div id="escena3D"></div>

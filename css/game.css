@@ -2,6 +2,93 @@ body {
       margin: 0;
     }
 
+    .overlay-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(1, 7, 22, 0.9);
+      display: none;
+      z-index: 20;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .overlay-menu {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      width: 280px;
+    }
+
+    .overlay-menu button,
+    .settings-panel button {
+      font-family: PixelifySans-SemiBold, sans-serif;
+      font-size: 18px;
+      padding: 12px 24px;
+      border: 4px solid #FDF0D5;
+      border-radius: 12px;
+      background: #437F97;
+      color: #FDF0D5;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .overlay-menu button:hover,
+    .settings-panel button:hover {
+      transform: scale(1.05);
+      background: #FFB30F;
+      color: #01295F;
+    }
+
+    .settings-panel {
+      width: 360px;
+      max-width: 90%;
+      background: #011638;
+      border: 4px solid #FDF0D5;
+      border-radius: 18px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      text-align: center;
+      color: #FDF0D5;
+      font-family: PixelifySans-SemiBold, sans-serif;
+    }
+
+    #overlayVolume {
+      width: 100%;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 10px;
+      border-radius: 5px;
+      background: #7a92c7;
+      outline: none;
+    }
+
+    #overlayVolume::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #FFB30F;
+      cursor: pointer;
+      border: 2px solid #FDF0D5;
+    }
+
+    #overlayVolume::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #FFB30F;
+      cursor: pointer;
+      border: 2px solid #FDF0D5;
+    }
+
     .contenedor {
       width: 100%;
       height: 100vh;

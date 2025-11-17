@@ -13,10 +13,15 @@
         </div>
     </div>
     <div class="bottom">
-        <a href="game.html"><button id="continuar">CONTINUAR</button></a>
-        <a href="settings.html"><button id="settings">CONFIGURACIÓN</button></a>
+        <button id="continuar">CONTINUAR</button>
+        <a href="settings.html"><button id="settings">CONFIGURACION</button></a>
         <a href="main.html"><button id="salir">SALIR AL MENU</button></a>
     </div>
     <script src="js/background-music.js"></script>
+    <script>
+        document.getElementById('continuar')?.addEventListener('click', () => {
+            window.history.back();
+        });
+    </script>
 </body>
 </html>
