@@ -97,6 +97,7 @@
     import { STLLoader } from "./scene/STLLoader.js";
     import { GLTFLoader } from "./scene/GLTFLoader.js";
     import { Player } from "./js/player.js";
+    import { awardScoreForLevel } from "./js/score-service.js";
 
     const contenedor = document.getElementById("escena3D");
 
@@ -161,6 +162,7 @@
     };
     
     let isPlayerTurn = true;
+    let level1ScoreSaved = false;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(contenedor.clientWidth, contenedor.clientHeight);
@@ -812,10 +814,23 @@
       }
     }
 
+    async function persistLevelOneScore() {
+      if (level1ScoreSaved) return;
+      try {
+        await awardScoreForLevel(1);
+        level1ScoreSaved = true;
+        console.log('[scores] nivel 1 guardado');
+      } catch (error) {
+        level1ScoreSaved = false;
+        console.error('[scores] no se pudo guardar nivel 1', error);
+      }
+    }
+
     function endBattle(won) {
       setTimeout(() => {
         if (won) {
           alert(`¡Ganaste! Has derrotado a ${enemyStats.name}`);
+          persistLevelOneScore();
           // Eliminar enemigo del escenario y del arreglo
           const defeatedEnemy = enemies.find(e => e.userData.enemyName === enemyStats.name);
           if (defeatedEnemy) {

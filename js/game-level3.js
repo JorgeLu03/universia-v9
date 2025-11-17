@@ -44,6 +44,7 @@ import { OrbitControls } from "../scene/OrbitControls.js";
 import { STLLoader } from "../scene/STLLoader.js";
 import { GLTFLoader } from "../scene/GLTFLoader.js";
 import { Player } from "./player.js";
+import { awardScoreForLevel } from "./score-service.js";
 
 const contenedor = document.getElementById("escena3D");
 const scene = new THREE.Scene();
@@ -106,6 +107,7 @@ let enemyStats = {
 };
 
 let isPlayerTurn = true;
+let level3ScoreSaved = false;
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(contenedor.clientWidth, contenedor.clientHeight);
@@ -575,10 +577,23 @@ function runFromBattle() {
 		setTimeout(enemyAttack, 1500);
 	}
 }
+async function persistLevelThreeScore() {
+	if (level3ScoreSaved) return;
+	try {
+		await awardScoreForLevel(3);
+		level3ScoreSaved = true;
+		console.log('[scores] nivel 3 guardado');
+	} catch (error) {
+		level3ScoreSaved = false;
+		console.error('[scores] no se pudo guardar nivel 3', error);
+	}
+}
+
 function endBattle(won) {
 	setTimeout(() => {
 		if (won) {
 			alert(`¡Ganaste! Has derrotado a ${enemyStats.name}`);
+			persistLevelThreeScore();
 			if (currentBattleEnemy) {
 				scene.remove(currentBattleEnemy);
 				const index = enemies.indexOf(currentBattleEnemy);

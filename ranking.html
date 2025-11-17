@@ -13,15 +13,19 @@
         </div>
     </div>
     <div class="ranking-container">
-        <ol>
-            <li><span class="jugador">Jugador1</span> - <span class="puntos">1500 pts</span></li>
-            <li><span class="jugador">Jugador2</span> - <span class="puntos">1200 pts</span></li>
-            <li><span class="jugador">Jugador3</span> - <span class="puntos">950 pts</span></li>
-        </ol>
+        <div class="ranking-actions">
+            <button id="refresh-ranking">ACTUALIZAR</button>
+            <span id="ranking-status">Ultima actualizacion: --</span>
+        </div>
+        <ol id="ranking-list" data-ranking-list></ol>
     </div>
     <div class="bottom">
         <a href="main.html"><button id="volver">VOLVER</button></a>
     </div>
     <script src="js/background-music.js"></script>
+    <script>
+        window.SCORES_API_URL = 'http://localhost:4000';
+    </script>
+    <script type="module" src="js/ranking.js"></script>
 </body>
 </html>

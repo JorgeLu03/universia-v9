@@ -4,6 +4,7 @@ import { STLLoader } from "../scene/STLLoader.js";
 import { GLTFLoader } from "../scene/GLTFLoader.js";
 import { Player } from "./player.js";
 import { setupBattleSystem } from "./battle.js";
+import { awardScoreForLevel } from "./score-service.js";
 
 const contenedor = document.getElementById("escena3D");
 const scene = new THREE.Scene();
@@ -68,6 +69,7 @@ let enemyStats = {
 };
 
 let isPlayerTurn = true;
+let level2ScoreSaved = false;
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(contenedor.clientWidth, contenedor.clientHeight);
@@ -618,11 +620,24 @@ function runFromBattle() {
 		setTimeout(enemyAttack, 1500);
 	}
 }
+async function persistLevelTwoScore() {
+	if (level2ScoreSaved) return;
+	try {
+		await awardScoreForLevel(2);
+		level2ScoreSaved = true;
+		console.log('[scores] nivel 2 guardado');
+	} catch (error) {
+		level2ScoreSaved = false;
+		console.error('[scores] no se pudo guardar nivel 2', error);
+	}
+}
+
 function endBattle(won) {
 	setTimeout(() => {
 		stopBattleMusic();
 		if (won) {
 			alert(`¡Ganaste! Has derrotado a ${enemyStats.name}`);
+			persistLevelTwoScore();
 			if (currentBattleEnemy) {
 				scene.remove(currentBattleEnemy);
 				const index = enemies.indexOf(currentBattleEnemy);

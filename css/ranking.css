@@ -40,6 +40,25 @@ h1 {
     width: 340px;
 }
 
+.ranking-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+#refresh-ranking {
+    flex-shrink: 0;
+    margin: 0;
+    width: 150px;
+    font-size: 120%;
+}
+
+#ranking-status {
+    color: #FDF0D5;
+    font-size: 85%;
+}
+
 .ranking-container ol {
     list-style: decimal;
     color: #FDF0D5;
@@ -49,6 +68,13 @@ h1 {
 
 .ranking-container li {
     margin: 12px 0;
+}
+
+.ranking-container li.loading,
+.ranking-container li.empty,
+.ranking-container li.error {
+    list-style: none;
+    text-align: center;
 }
 
 .jugador {
