@@ -1,3 +1,7 @@
+import { auth } from '../js/firebase-config.js';
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+
 // --- LÓGICA DE BATALLA Y ATAQUE ---
 
 function startBattle(enemy) {
@@ -10,7 +14,6 @@ function startBattle(enemy) {
 	enemyStats.maxHp = 100;
 	enemyStats.attack = 15;
 	enemyStats.defense = 8;
-	// Puedes personalizar stats por tipo de enemigo aquí si lo deseas
 	// Oculta el texto de interacción si está visible
 	const interactPrompt = document.getElementById('interactPrompt');
 	if (interactPrompt) interactPrompt.style.display = 'none';
@@ -21,6 +24,7 @@ function startBattle(enemy) {
 	// Muestra la UI de batalla
 	document.getElementById('battleUI').style.display = 'block';
 	document.getElementById('enemyName').textContent = enemyStats.name;
+	HTMLPictureElement.style.display = "none";
 	updateBattleUI();
 	showMessage('Presiona ATACAR para comenzar el combate');
 	// Reproduce el sonido de PELEA
@@ -29,7 +33,7 @@ function startBattle(enemy) {
 			window.battleAudio.pause();
 			window.battleAudio.currentTime = 0;
 		}
-		window.battleAudio = new Audio('../assets/Sonido/PELEA.mp3');
+		window.battleAudio = new Audio('./assets/Sonido/PELEA.mp3');
 		window.battleAudio.volume = 1.0;
 		window.battleAudio.loop = true;
 		window.battleAudio.play();
@@ -47,66 +51,13 @@ import { RGBELoader } from "../assets/Light/RGBELoader.js";
 import { Player } from "./player.js";
 import { awardScoreForLevel } from "./score-service.js";
 
-const pauseOverlay = document.getElementById('pauseOverlay');
-const pauseButton = document.getElementById('pause');
-const resumeBtn = document.getElementById('resumeBtn');
-const settingsBtn = document.getElementById('settingsBtn');
-const exitBtn = document.getElementById('exitBtn');
-const settingsOverlay = document.getElementById('settingsOverlay');
-const closeSettingsBtn = document.getElementById('closeSettingsBtn');
-const overlayVolume = document.getElementById('overlayVolume');
-let isGamePaused = false;
+let currentUser = null;
 
-function showPause() {
-	isGamePaused = true;
-	if (pauseOverlay) pauseOverlay.style.display = 'flex';
-}
-
-function hidePause(resumeGame = true) {
-	if (resumeGame) {
-		isGamePaused = false;
-	}
-	if (pauseOverlay) pauseOverlay.style.display = 'none';
-}
-
-function syncOverlayVolume() {
-	if (!overlayVolume) return;
-	const current = window.persistentMusic?.volume ?? parseFloat(localStorage.getItem('universiaVolume') ?? '0.8');
-	overlayVolume.value = Math.round((Number.isFinite(current) ? current : 0.8) * 100);
-}
-
-function showSettingsPanel() {
-	isGamePaused = true;
-	if (pauseOverlay) pauseOverlay.style.display = 'none';
-	if (settingsOverlay) {
-		syncOverlayVolume();
-		settingsOverlay.style.display = 'flex';
-	}
-}
-
-function hideSettingsPanel() {
-	if (settingsOverlay) settingsOverlay.style.display = 'none';
-}
-
-pauseButton?.addEventListener('click', showPause);
-resumeBtn?.addEventListener('click', () => hidePause(true));
-settingsBtn?.addEventListener('click', showSettingsPanel);
-closeSettingsBtn?.addEventListener('click', () => {
-	hideSettingsPanel();
-	showPause();
-});
-exitBtn?.addEventListener('click', () => {
-	window.location.href = 'main.html';
-});
-
-overlayVolume?.addEventListener('input', (event) => {
-	const value = Number(event.target.value);
-	const normalized = Math.min(Math.max(value / 100, 0), 1);
-	const volumeChange = new CustomEvent('universia-volume-change', { detail: normalized });
-	window.dispatchEvent(volumeChange);
-});
-
+const dificultad = localStorage.getItem("dificultad") || "normal";
 const contenedor = document.getElementById("escena3D");
+
+const EnergyUI = document.getElementById("EnergyUI");
+const HPUI = document.getElementById("HPUI");
 const scene = new THREE.Scene();
 scene.background = new THREE.Color("#34495E");
 
@@ -117,7 +68,7 @@ const camera = new THREE.PerspectiveCamera(
 camera.position.set(0, 30, -50);
 
 // --- Player system ---
-const maxSpeed = 0.035;
+const maxSpeed = 0.05;
 const acceleration = 0.002;
 const deceleration = 0.95;
 const rotationSpeed = 0.1;
@@ -155,16 +106,27 @@ let playerStats = {
 	hp: 100,
 	maxHp: 100,
 	attack: 20,
-	defense: 10
+	defense: 10,
+    energy: 100,
+    maxEnergy: 100
 };
 
+onAuthStateChanged(auth, (user) => {
+    currentUser = user;
+    playerStats.name = currentUser.displayName;
+});
+
 let enemyStats = {
-	name: "Enemigo",
-	hp: 100,
-	maxHp: 100,
-	attack: 15,
-	defense: 8
+    name: "Enemigo",
+    hp: 100,
+    maxHp: 100,
+    attack: 15,
+    defense: 8
 };
+if(dificultad === "dificil"){
+      enemyStats.attack = 22;
+	  enemyStats.defense = 10;
+}
 
 let isPlayerTurn = true;
 let level3ScoreSaved = false;
@@ -199,7 +161,7 @@ scene.add(directionalLight);
 
 // Escenario (Scenario3)
 const loaderGLB = new GLTFLoader();
-loaderGLB.load("../assets/models/scenario3.glb", function (model) {
+loaderGLB.load("./assets/models/scenario3.glb", function (model) {
 	scenarioModel = model.scene;
 	scenarioModel.scale.set(scenarioScale, scenarioScale, scenarioScale);
 	scenarioModel.position.copy(scenarioPosition);
@@ -220,20 +182,20 @@ playerController.loadPlayerModel(() => {
 // });
 
 // --- Enemigos ---
-loaderGLB.load("../assets/models/bee_cartoon.glb", function (model) {
+loaderGLB.load("./assets/models/bee_cartoon.glb", function (model) {
 	const obj = model.scene;
 	obj.scale.set(0.5, 0.5, 0.5);
-	obj.position.set(6, 2, 0);
+	obj.rotateY(-Math.PI / 2);
+	obj.position.set(9, 1.8, 15);
 	obj.userData.enemyName = "Abeja";
 	obj.userData.isEnemy = true;
 	scene.add(obj);
 	enemies.push(obj);
 });
-loaderGLB.load("../assets/models/ice_bear_we_bare_bears.glb", function (model) {
+loaderGLB.load("./assets/models/ice_bear_we_bare_bears.glb", function (model) {
 	const obj = model.scene;
 	obj.scale.set(0.4, 0.4, 0.4);
-	obj.position.set(12, 1.5, 7);
-	obj.rotateY(-Math.PI / 2);
+	obj.position.set(0, 1.5, -10);
 	obj.userData.enemyName = "Oso";
 	obj.userData.isEnemy = true;
 	obj.userData.detectionRange = 8;
@@ -244,7 +206,7 @@ loaderGLB.load("../assets/models/ice_bear_we_bare_bears.glb", function (model) {
 	scene.add(obj);
 	enemies.push(obj);
 });
-loaderGLB.load("../assets/models/low_poly_toucan.glb", function (model) {
+loaderGLB.load("./assets/models/low_poly_toucan.glb", function (model) {
 	const obj = model.scene;
 	obj.rotateY(-Math.PI / 2);
 	obj.scale.set(0.12, 0.12, 0.12);
@@ -256,11 +218,11 @@ loaderGLB.load("../assets/models/low_poly_toucan.glb", function (model) {
 });
 let mixer;
 const animScene = new GLTFLoader();
-animScene.load("../assets/models/elephant.glb", function (model) {
+animScene.load("./assets/models/elephant.glb", function (model) {
 	const obj = model.scene;
-	obj.rotateY(-Math.PI / 2);
+	obj.rotateY(Math.PI / 2);
 	obj.scale.set(1.6, 1.6, 1.6);
-	obj.position.set(10, 0, -8.66);
+	obj.position.set(-6, 0, 18);
 	obj.userData.enemyName = "Elefante";
 	obj.userData.isEnemy = true;
 	scene.add(obj);
@@ -274,15 +236,172 @@ animScene.load("../assets/models/elephant.glb", function (model) {
 
 // Owl Anim
 let mixer2;
-animScene.load("../assets/models/day_20_-_snowy_owl.glb", function (model) {
+animScene.load("./assets/models/day_20_-_snowy_owl.glb", function (model) {
 	const obj = model.scene;
+	obj.rotateY(-1.5);
 	obj.scale.set(1.5, 1.5, 1.5);
-	obj.position.set(-5, 2, -8.66);
+	obj.position.set(10, 2, 5);
+	obj.userData.enemyName = "Buho";
+    obj.userData.isEnemy = true;
 	scene.add(obj);
+	enemies.push(obj);
+
 	mixer2 = new THREE.AnimationMixer(obj);
 	const action2 = mixer2.clipAction(model.animations[0]);
 	action2.play();
 });
+
+
+/* OBJETOS ESPECIALES */
+
+function aplicarBrilloModelos(model) {
+	  model.traverse((child) => {
+			if (child.isMesh) {
+				child.material.emissive = new THREE.Color("rgb(70%, 30%, 30%)");  // tono cálido
+				child.material.emissiveIntensity = 0.2;               // brillo (0–1)
+			}
+	  });
+}
+
+const coffeeCount = Math.floor(Math.random() * 3) + 1;
+const coffees = [];
+
+for (let i = 0; i < coffeeCount; i++) {
+	  loaderGLB.load("assets/models/coffee_cup.glb", function (model) {
+		const obj = model.scene;
+		aplicarBrilloModelos(obj);
+		obj.scale.set(0.15, 0.15, 0.15);
+
+		const randomX = Math.random() * 24 - 12;
+		const randomZ = Math.random() * 32 - 16;
+		const randomY = 0.8;
+
+		obj.position.set(randomX, randomY, randomZ);
+		obj.userData.type = "coffee";
+		obj.userData.baseY = obj.position.y;
+		obj.userData.floatOffset = Math.random() * Math.PI * 2;
+
+		coffees.push(obj);
+		scene.add(obj);
+	  });
+}
+
+const tabletCount = Math.floor(Math.random() * 2) + 1; // 1–2 tabletas
+const tablets = [];
+
+for (let i = 0; i < tabletCount; i++) {
+	loaderGLB.load("assets/models/tablet_folder.glb", function (model) {
+		const obj = model.scene;
+		aplicarBrilloModelos(obj);
+
+		obj.scale.set(0.03, 0.03, 0.03);
+
+		const randomX = Math.random() * 20 - 10;
+		const randomZ = Math.random() * 20 - 10;
+		const randomY = 0.8;
+
+		obj.position.set(randomX, randomY, randomZ);
+		obj.userData.type = "tablet";
+		obj.userData.baseY = obj.position.y;
+		obj.userData.floatOffset = Math.random() * Math.PI * 2;
+
+		tablets.push(obj);
+		scene.add(obj);
+	});
+}
+
+const sandwiches = [];
+const sandwichCount = Math.floor(Math.random() * 3) + 1;
+
+for (let i = 0; i < sandwichCount; i++) {
+    loaderGLB.load("assets/models/sandwich.glb", function (model) {
+        const obj = model.scene;
+
+        aplicarBrilloModelos(obj);
+        obj.scale.set(0.4, 0.4, 0.4);
+
+        const randomX = Math.random() * 24 - 12;
+        const randomZ = Math.random() * 32 - 16;
+        const randomY = 0.8;
+
+        obj.position.set(randomX, randomY, randomZ);
+        obj.userData.type = "sandwich";
+        obj.userData.baseY = obj.position.y;
+        obj.userData.floatOffset = Math.random() * Math.PI * 2;
+
+        sandwiches.push(obj);
+        scene.add(obj);
+    });
+}
+
+const objectPrompt = document.getElementById("objectPrompt");
+
+function checkNearbyObjects() {
+    if (!player || inBattle) return null;
+
+    let closestObject = null;
+    let closestDist = 2;
+
+    // Buscar cafés
+    coffees.forEach(obj => {
+        const dist = player.position.distanceTo(obj.position);
+        if (dist < closestDist) {
+            closestObject = obj;
+            closestDist = dist;
+        }
+    });
+
+    // Buscar tabletas
+    tablets.forEach(obj => {
+        const dist = player.position.distanceTo(obj.position);
+        if (dist < closestDist) {
+            closestObject = obj;
+            closestDist = dist;
+        }
+    });
+
+    // Buscar sandwiches
+    sandwiches.forEach(obj => {
+        const dist = player.position.distanceTo(obj.position);
+        if (dist < closestDist) {
+            closestObject = obj;
+            closestDist = dist;
+        }
+    });
+
+    objectPrompt.style.display = closestObject ? "block" : "none";
+
+    return closestObject;
+}
+
+document.addEventListener('keydown', (e) => {
+	  if (e.code === 'Space') {
+		const obj = checkNearbyObjects();
+        if (!obj) return;
+
+        if (obj.userData.type === "coffee") {
+            playerStats.energy = Math.min(playerStats.maxEnergy, playerStats.energy + 15);
+            coffees.splice(coffees.indexOf(obj), 1);
+        }
+
+        if (obj.userData.type === "tablet") {
+            playerStats.energy = Math.max(0, playerStats.energy - 20);
+            tablets.splice(tablets.indexOf(obj), 1);
+        }
+
+		if (obj.userData.type === "sandwich") {
+            playerStats.hp = Math.min(playerStats.maxHp, playerStats.hp + 20);
+            sandwiches.splice(sandwiches.indexOf(obj), 1);
+        }
+
+        // Quitar de la escena
+        scene.remove(obj);
+
+		updateHPUI();
+        updateEnergyUI();
+	  }
+});
+
 
 // Controles de teclado para el personaje principal
 window.addEventListener('keydown', (e) => {
@@ -293,6 +412,8 @@ window.addEventListener('keydown', (e) => {
 	if (key === 'd' || key === 'arrowright') playerController.setKey('d', true);
 	if (key === 'e') {
 		if (nearbyEnemy && !inBattle) {
+			EnergyUI.style.display = "none";
+			HPUI.style.display = "none";
 			startBattle(nearbyEnemy);
 		}
 	}
@@ -388,7 +509,7 @@ function calculateSlideVelocity(velocity, normal) {
 function pushPlayerOutOfCollisions() {
 	if (!player || boundaryObjects.length === 0) return;
 	const playerBox = new THREE.Box3().setFromObject(player);
-	const pushDistance = 0.1;
+	const pushDistance = 0.01;
 	const maxIterations = 10;
 	const originalY = player.position.y;
 	for (let iteration = 0; iteration < maxIterations; iteration++) {
@@ -516,6 +637,18 @@ function animate() {
 		if (mixer) mixer.update(delta);
 		if (playerController) playerController.updateMixer(delta);
 		if (mixer2) mixer2.update(delta);
+		//Objetos especiales
+        scene.traverse(obj => {
+            if (obj.userData.type === "coffee" || obj.userData.type === "tablet" || obj.userData.type === "sandwich") {
+                obj.rotation.y += 0.003;
+                const amplitude = 0.15;    // cuánto sube/baja
+                const speed = 1.5;         // qué tan rápido flota
+                const elapsed = clock.getElapsedTime();
+                obj.position.y = obj.userData.baseY 
+                              + Math.sin(elapsed * speed + obj.userData.floatOffset) * amplitude;
+            }
+        });
+		checkNearbyObjects();
 		updatePlayerMovement();
 		updateAggressiveEnemies();
 		checkNearbyEnemies();
@@ -535,68 +668,48 @@ if (!document.getElementById('pause')) {
 	document.body.appendChild(pauseBtn);
 }
 
-// --- UI DE BATALLA (si no existe) ---
-if (!document.getElementById('battleUI')) {
-	const battleUI = document.createElement('div');
-	battleUI.id = 'battleUI';
-	battleUI.style.display = 'none';
-	battleUI.style.position = 'absolute';
-	battleUI.style.bottom = '20px';
-	battleUI.style.left = '50%';
-	battleUI.style.transform = 'translateX(-50%)';
-	battleUI.style.background = 'rgba(0,0,0,0.8)';
-	battleUI.style.padding = '20px';
-	battleUI.style.borderRadius = '10px';
-	battleUI.style.color = 'white';
-	battleUI.style.width = '600px';
-	battleUI.innerHTML = `
-		<div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
-			<div style="flex: 1; margin-right: 10px;">
-				<h3 id="playerName" style="margin: 0 0 5px 0;">Unicornio</h3>
-				<div style="background: #333; height: 20px; border-radius: 5px; overflow: hidden;">
-					<div id="playerHP" style="background: #4CAF50; height: 100%; width: 100%; transition: width 0.3s;"></div>
-				</div>
-				<p id="playerHPText" style="margin: 5px 0 0 0; font-size: 14px;">HP: 100/100</p>
-			</div>
-			<div style="flex: 1; margin-left: 10px;">
-				<h3 id="enemyName" style="margin: 0 0 5px 0;">Enemigo</h3>
-				<div style="background: #333; height: 20px; border-radius: 5px; overflow: hidden;">
-					<div id="enemyHP" style="background: #f44336; height: 100%; width: 100%; transition: width 0.3s;"></div>
-				</div>
-				<p id="enemyHPText" style="margin: 5px 0 0 0; font-size: 14px;">HP: 100/100</p>
-			</div>
-		</div>
-		<div id="battleMessage" style="background: #222; padding: 10px; border-radius: 5px; margin-bottom: 15px; min-height: 40px;">
-			<p style="margin: 0;">Presiona ATACAR para comenzar el combate</p>
-		</div>
-		<div id="battleActions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-			<button id="attackBtn" style="padding: 15px; font-size: 16px; cursor: pointer; background: #2196F3; color: white; border: none; border-radius: 5px;">ATACAR</button>
-			<button id="specialBtn" style="padding: 15px; font-size: 16px; cursor: pointer; background: #FF9800; color: white; border: none; border-radius: 5px;">ATAQUE ESPECIAL</button>
-			<button id="defendBtn" style="padding: 15px; font-size: 16px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 5px;">DEFENDER</button>
-			<button id="runBtn" style="padding: 15px; font-size: 16px; cursor: pointer; background: #f44336; color: white; border: none; border-radius: 5px;">HUIR</button>
-		</div>
-	`;
-	document.body.appendChild(battleUI);
-}
-
 // --- LÓGICA DE BATALLA Y ATAQUE ---
 function updateBattleUI() {
 	const playerHPPercent = (playerStats.hp / playerStats.maxHp) * 100;
+	const playerEnergyPercent = (playerStats.energy / playerStats.maxEnergy) * 100;
 	const enemyHPPercent = (enemyStats.hp / enemyStats.maxHp) * 100;
+
 	document.getElementById('playerHP').style.width = playerHPPercent + '%';
+	document.getElementById('playerEnergy').style.width = playerEnergyPercent + '%';
 	document.getElementById('enemyHP').style.width = enemyHPPercent + '%';
+
 	document.getElementById('playerHPText').textContent = `HP: ${Math.max(0, playerStats.hp)}/${playerStats.maxHp}`;
+	document.getElementById('playerEnergyText').textContent = `Energia: ${Math.max(0, playerStats.energy)}/${playerStats.maxEnergy}`;
 	document.getElementById('enemyHPText').textContent = `HP: ${Math.max(0, enemyStats.hp)}/${enemyStats.maxHp}`;
 }
 function showMessage(message) {
 	document.getElementById('battleMessage').innerHTML = `<p style="margin: 0;">${message}</p>`;
 }
+
+function updateEnergyUI(){
+    const playerEnergyPercent = (playerStats.energy / playerStats.maxEnergy) * 100;
+    document.getElementById('playerEnergyUI').style.width = playerEnergyPercent + '%';
+    document.getElementById('playerEnergyTextUI').textContent = `Energia: ${Math.max(0, playerStats.energy)}/${playerStats.maxEnergy}`;
+}
+function updateHPUI(){
+	const playerHPPercent = (playerStats.hp / playerStats.maxHp) * 100;
+    document.getElementById('playerHPUI').style.width = playerHPPercent + '%';
+    document.getElementById('playerHPTextUI').textContent = `HP: ${Math.max(0, playerStats.hp)}/${playerStats.maxHp}`;
+}
 function playerAttack() {
 	if (!isPlayerTurn) return;
+	if(playerStats.energy <=3){
+        showMessage('No tienes energia suficiente para atacar!');
+        return;
+    }
 	playAttackSound();
 	const damage = Math.max(5, playerStats.attack - enemyStats.defense + Math.floor(Math.random() * 10));
 	enemyStats.hp -= damage;
 	showMessage(`${playerStats.name} atacó e hizo ${damage} de daño!`);
+
+	const energyCost = 3 + Math.floor(Math.random() * 4);
+    playerStats.energy = Math.max(0, playerStats.energy - energyCost);
+	
 	updateBattleUI();
 	if (enemyStats.hp <= 0) {
 		endBattle(true);
@@ -607,9 +720,17 @@ function playerAttack() {
 }
 function playerSpecialAttack() {
 	if (!isPlayerTurn) return;
+	if(playerStats.energy <=8){
+        showMessage('No tienes energia suficiente para un ataque especial!');
+        return;
+      }
 	playAttackSound();
 	const damage = Math.max(10, playerStats.attack * 1.5 - enemyStats.defense + Math.floor(Math.random() * 15));
 	enemyStats.hp -= damage;
+
+	const energyCost = 8 + Math.floor(Math.random() * 8);
+    playerStats.energy = Math.max(0, playerStats.energy - energyCost);  
+	
 	showMessage(`¡${playerStats.name} usó Ataque Especial e hizo ${damage} de daño!`);
 	updateBattleUI();
 	if (enemyStats.hp <= 0) {
@@ -671,7 +792,14 @@ async function persistLevelThreeScore() {
 function endBattle(won) {
 	setTimeout(() => {
 		if (won) {
-			alert(`¡Ganaste! Has derrotado a ${enemyStats.name}`);
+				Swal.fire({
+				title: "¡Ganaste!",
+				text: "Has derrotado a " + enemyStats.name,
+				imageUrl: "./assets/images/win-icon.png",
+				imageWidth: 100,
+				imageHeight: 100,
+				confirmButtonText: "¡Genial!"
+			});
 			persistLevelThreeScore();
 			if (currentBattleEnemy) {
 				scene.remove(currentBattleEnemy);
@@ -683,11 +811,36 @@ function endBattle(won) {
 					nearbyEnemy = null;
 					document.getElementById('interactPrompt').style.display = 'none';
 				}
+				if (enemies.length === 0) {
+					Swal.fire({
+					title: "¡Nivel completado!",
+					text: "Has derrotado a todos los enemigos",
+					imageUrl: "./assets/images/level-complete.png",
+					imageWidth: 120,
+					imageHeight: 120,
+					confirmButtonText: "Volver al inicio"
+					}).then(() => {
+					window.location.href = "main.html";
+					});
+				}
 			}
 		} else {
-			alert(`Has perdido el combate...`);
+			Swal.fire({
+            title: "¡Oh no!",
+            text: "No has podido completar este nivel",
+            imageUrl: "./assets/images/death.png",
+            imageWidth: 100,
+            imageHeight: 100,
+            confirmButtonText: "Volver al inicio"
+          }).then(() => {
+				window.location.href = "main.html";
+			});
 		}
 		document.getElementById('battleUI').style.display = 'none';
+		EnergyUI.style.display = "block";
+		HPUI.style.display = "block";
+        updateEnergyUI();
+		updateHPUI();
 		inBattle = false;
 		currentBattleEnemy = null;
 		// Detiene el audio de combate si existe
@@ -710,7 +863,7 @@ document.getElementById('runBtn').addEventListener('click', runFromBattle);
 
 // --- AUDIO DE ATAQUE ---
 function playAttackSound() {
-	const attackAudio = new Audio('../assets/Sonido/ATTACK.mp3');
+	const attackAudio = new Audio('./assets/Sonido/ATTACK.mp3');
 	attackAudio.volume = 1.0;
 	attackAudio.play();
 }

@@ -45,7 +45,6 @@ body{
   position: absolute;
   top: 0;
   right: 0;
-  width: 80px;
   padding: 10px;
 }
 
@@ -122,6 +121,7 @@ button{
     border: 30px solid;
     border-radius: 25%;
     border-image: url(../assets/images/border-1.png) 33% round;
+    cursor: pointer;
 }
 
 #jugar{

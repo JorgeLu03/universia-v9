@@ -1,3 +1,6 @@
+import { auth } from '../js/firebase-config.js';
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
 import * as THREE from "../scene/three.module.js";
 import { OrbitControls } from "../scene/OrbitControls.js";
 import { STLLoader } from "../scene/STLLoader.js";
@@ -7,66 +10,12 @@ import { Player } from "./player.js";
 import { setupBattleSystem } from "./battle.js";
 import { awardScoreForLevel } from "./score-service.js";
 
-const pauseOverlay = document.getElementById('pauseOverlay');
-const pauseButton = document.getElementById('pause');
-const resumeBtn = document.getElementById('resumeBtn');
-const settingsBtn = document.getElementById('settingsBtn');
-const exitBtn = document.getElementById('exitBtn');
-const settingsOverlay = document.getElementById('settingsOverlay');
-const closeSettingsBtn = document.getElementById('closeSettingsBtn');
-const overlayVolume = document.getElementById('overlayVolume');
-let isGamePaused = false;
+let currentUser = null;
 
-function showPause() {
-	isGamePaused = true;
-	if (pauseOverlay) pauseOverlay.style.display = 'flex';
-}
-
-function hidePause(resumeGame = true) {
-	if (resumeGame) {
-		isGamePaused = false;
-	}
-	if (pauseOverlay) pauseOverlay.style.display = 'none';
-}
-
-function syncOverlayVolume() {
-	if (!overlayVolume) return;
-	const current = window.persistentMusic?.volume ?? parseFloat(localStorage.getItem('universiaVolume') ?? '0.8');
-	overlayVolume.value = Math.round((Number.isFinite(current) ? current : 0.8) * 100);
-}
-
-function showSettingsPanel() {
-	isGamePaused = true;
-	if (pauseOverlay) pauseOverlay.style.display = 'none';
-	if (settingsOverlay) {
-		syncOverlayVolume();
-		settingsOverlay.style.display = 'flex';
-	}
-}
-
-function hideSettingsPanel() {
-	if (settingsOverlay) settingsOverlay.style.display = 'none';
-}
-
-pauseButton?.addEventListener('click', showPause);
-resumeBtn?.addEventListener('click', () => hidePause(true));
-settingsBtn?.addEventListener('click', showSettingsPanel);
-closeSettingsBtn?.addEventListener('click', () => {
-	hideSettingsPanel();
-	showPause();
-});
-exitBtn?.addEventListener('click', () => {
-	window.location.href = 'main.html';
-});
-
-overlayVolume?.addEventListener('input', (event) => {
-	const value = Number(event.target.value);
-	const normalized = Math.min(Math.max(value / 100, 0), 1);
-	const volumeChange = new CustomEvent('universia-volume-change', { detail: normalized });
-	window.dispatchEvent(volumeChange);
-});
-
+const dificultad = localStorage.getItem("dificultad") || "normal";
 const contenedor = document.getElementById("escena3D");
+
+const EnergyUI = document.getElementById("EnergyUI");
 const scene = new THREE.Scene();
 scene.background = new THREE.Color("#34495E");
 
@@ -77,7 +26,7 @@ const camera = new THREE.PerspectiveCamera(
 camera.position.set(0, 30, -50);
 
 // --- Player system ---
-const maxSpeed = 0.035;
+const maxSpeed = 0.05;
 const acceleration = 0.002;
 const deceleration = 0.95;
 const rotationSpeed = 0.1;
@@ -117,16 +66,27 @@ let playerStats = {
 	hp: 100,
 	maxHp: 100,
 	attack: 20,
-	defense: 10
+	defense: 10,
+    energy: 100,
+    maxEnergy: 100
 };
 
+onAuthStateChanged(auth, (user) => {
+    currentUser = user;
+    playerStats.name = currentUser.displayName;
+});
+
 let enemyStats = {
-	name: "Enemigo",
-	hp: 100,
-	maxHp: 100,
-	attack: 15,
-	defense: 8
+    name: "Enemigo",
+    hp: 100,
+    maxHp: 100,
+    attack: 15,
+    defense: 8
 };
+if(dificultad === "dificil"){
+      enemyStats.attack = 22;
+	  enemyStats.defense = 10;
+}
 
 let isPlayerTurn = true;
 let level2ScoreSaved = false;
@@ -161,7 +121,7 @@ scene.add(directionalLight);
 
 // Escenario (Scenario2)
 const loaderGLB = new GLTFLoader();
-loaderGLB.load("../assets/models/Scenario2.glb", function (model) {
+loaderGLB.load("./assets/models/Scenario2.glb", function (model) {
 	scenarioModel = model.scene;
 	const originalScenarioBox = new THREE.Box3().setFromObject(scenarioModel);
 	const originalScenarioSize = new THREE.Vector3();
@@ -211,7 +171,7 @@ loaderGLB.load("../assets/models/Scenario2.glb", function (model) {
 });
 
 // Cargar modelo de colisiones internas (Scenario2Colissions)
-loaderGLB.load("../assets/models/Scenario2Colissions.glb", function (model) {
+loaderGLB.load("./assets/models/Scenario2Colissions.glb", function (model) {
 	const collisionModel = model.scene;
 	const originalCollisionBox = new THREE.Box3().setFromObject(collisionModel);
 	const originalCollisionSize = new THREE.Vector3();
@@ -269,10 +229,11 @@ loaderGLB.load("../assets/models/Scenario2Colissions.glb", function (model) {
 
 
 // Abeja - Enemigo
-loaderGLB.load("../assets/models/bee_cartoon.glb", function (model) {
+loaderGLB.load("./assets/models/bee_cartoon.glb", function (model) {
 	const obj = model.scene;
 	obj.scale.set(0.5, 0.5, 0.5);
-	obj.position.set(6, 2, 0);
+	obj.rotateY(2);
+	obj.position.set(-7, 1.5, 1);
 	obj.userData.enemyName = "Abeja";
 	obj.userData.isEnemy = true;
 	scene.add(obj);
@@ -280,11 +241,11 @@ loaderGLB.load("../assets/models/bee_cartoon.glb", function (model) {
 });
 
 // Oso - Enemigo (persigue al jugador)
-loaderGLB.load("../assets/models/ice_bear_we_bare_bears.glb", function (model) {
+loaderGLB.load("./assets/models/ice_bear_we_bare_bears.glb", function (model) {
 	const obj = model.scene;
 	obj.scale.set(0.4, 0.4, 0.4);
-	obj.position.set(12, 1.5, 7);
-	obj.rotateY(-Math.PI / 2);
+	obj.position.set(6, 1.5, -8);
+	obj.rotateY(-0.5);
 	obj.userData.enemyName = "Oso";
 	obj.userData.isEnemy = true;
 	obj.userData.detectionRange = 8;
@@ -297,11 +258,11 @@ loaderGLB.load("../assets/models/ice_bear_we_bare_bears.glb", function (model) {
 });
 
 // Tucan - Enemigo
-loaderGLB.load("../assets/models/low_poly_toucan.glb", function (model) {
+loaderGLB.load("./assets/models/low_poly_toucan.glb", function (model) {
 	const obj = model.scene;
-	obj.rotateY(-Math.PI / 2);
+	obj.rotateY(Math.PI / 2);
 	obj.scale.set(0.12, 0.12, 0.12);
-	obj.position.set(-10, 0, 0);
+	obj.position.set(6, 0, -3);
 	obj.userData.enemyName = "Tucán";
 	obj.userData.isEnemy = true;
 	scene.add(obj);
@@ -311,11 +272,11 @@ loaderGLB.load("../assets/models/low_poly_toucan.glb", function (model) {
 // Elephant Anim - Enemigo
 let mixer;
 const animScene = new GLTFLoader();
-animScene.load("../assets/models/elephant.glb", function (model) {
+animScene.load("./assets/models/elephant.glb", function (model) {
 	const obj = model.scene;
-	obj.rotateY(-Math.PI / 2);
-	obj.scale.set(1.6, 1.6, 1.6);
-	obj.position.set(10, 0, -8.66);
+	obj.rotateY(2.5);
+	obj.scale.set(1.4, 1.4, 1.4);
+	obj.position.set(6, 0, 5);
 	obj.userData.enemyName = "Elefante";
 	obj.userData.isEnemy = true;
 	scene.add(obj);
@@ -335,11 +296,16 @@ playerController.loadPlayerModel(() => {
 
 // Owl Anim
 let mixer2;
-animScene.load("../assets/models/day_20_-_snowy_owl.glb", function (model) {
+animScene.load("./assets/models/day_20_-_snowy_owl.glb", function (model) {
 	const obj = model.scene;
+	obj.rotateY(1);
 	obj.scale.set(1.5, 1.5, 1.5);
-	obj.position.set(-5, 2, -8.66);
+	obj.position.set(-5, 2, -8);
+	obj.userData.enemyName = "Buho";
+    obj.userData.isEnemy = true;
 	scene.add(obj);
+	enemies.push(obj);
+
 	mixer2 = new THREE.AnimationMixer(obj);
 	const action2 = mixer2.clipAction(model.animations[0]);
 	action2.play();
@@ -475,7 +441,7 @@ function calculateSlideVelocity(velocity, normal) {
 function pushPlayerOutOfCollisions() {
 	if (!player || boundaryObjects.length === 0) return;
 	const playerBox = new THREE.Box3().setFromObject(player);
-	const pushDistance = 0.1;
+	const pushDistance = 0.01;
 	const maxIterations = 10;
 	const originalY = player.position.y;
 	for (let iteration = 0; iteration < maxIterations; iteration++) {
@@ -546,7 +512,7 @@ function updateAggressiveEnemies() {
 		enemies.forEach(enemy => {
 			if (!enemy.userData.isAggressive) return;
 			const distance = player.position.distanceTo(enemy.position);
-			console.log(`[DEBUG][N2] Distancia jugador-oso: ${distance}`);
+			//console.log(`[DEBUG][N2] Distancia jugador-oso: ${distance}`);
 			const detectionRange = enemy.userData.detectionRange || 8;
 			const chaseSpeed = enemy.userData.chaseSpeed || 0.08;
 			const attackRange = interactionDistance;
@@ -565,6 +531,7 @@ function updateAggressiveEnemies() {
 			} else if (distance <= attackRange) {
 				if (!inBattle) {
 					console.log('[DEBUG][N2] ¡Distancia de combate alcanzada! Llamando a startBattle');
+					EnergyUI.style.display = "none";
 					battle.startBattle(enemy);
 				}
 				enemy.userData.isChasing = false;
@@ -610,6 +577,19 @@ function animate() {
 		if (mixer) mixer.update(delta);
 		if (playerController) playerController.updateMixer(delta);
 		if (mixer2) mixer2.update(delta);
+		//Objetos especiales
+        scene.traverse(obj => {
+            if (obj.userData.type === "coffee" || obj.userData.type === "tablet") {
+                obj.rotation.y += 0.003;
+                const amplitude = 0.15;    // cuánto sube/baja
+                const speed = 1.5;         // qué tan rápido flota
+                const elapsed = clock.getElapsedTime();
+                obj.position.y = obj.userData.baseY 
+                              + Math.sin(elapsed * speed + obj.userData.floatOffset) * amplitude;
+            }
+        });
+		checkNearbyCoffees();
+		checkNearbyTablets();
 		updatePlayerMovement();
 		updateAggressiveEnemies();
 		checkNearbyEnemies();
@@ -619,27 +599,184 @@ function animate() {
 }
 animate();
 
+/* OBJETOS ESPECIALES */
+
+function aplicarBrilloModelos(model) {
+      model.traverse((child) => {
+            if (child.isMesh) {
+                child.material.emissive = new THREE.Color("rgb(70%, 30%, 30%)");  // tono cálido
+                child.material.emissiveIntensity = 0.2;               // brillo (0–1)
+            }
+      });
+}
+
+const coffeeCount = Math.floor(Math.random() * 3) + 1;
+const coffees = [];
+
+for (let i = 0; i < coffeeCount; i++) {
+      loaderGLB.load("assets/models/coffee_cup.glb", function (model) {
+        const obj = model.scene;
+        aplicarBrilloModelos(obj);
+        obj.scale.set(0.15, 0.15, 0.15);
+
+        const randomX = Math.random() * 20 - 10;
+        const randomZ = Math.random() * 20 - 10;
+        const randomY = 0.8;
+
+        obj.position.set(randomX, randomY, randomZ);
+        obj.userData.type = "coffee";
+        obj.userData.baseY = obj.position.y;
+        obj.userData.floatOffset = Math.random() * Math.PI * 2;
+
+        coffees.push(obj);
+        scene.add(obj);
+      });
+}
+
+const tabletCount = Math.floor(Math.random() * 2) + 1; // 1–2 tabletas
+const tablets = [];
+
+for (let i = 0; i < tabletCount; i++) {
+    loaderGLB.load("assets/models/tablet_folder.glb", function (model) {
+        const obj = model.scene;
+        aplicarBrilloModelos(obj);
+
+        obj.scale.set(0.03, 0.03, 0.03);
+
+        const randomX = Math.random() * 20 - 10;
+        const randomZ = Math.random() * 20 - 10;
+        const randomY = 0.8;
+
+        obj.position.set(randomX, randomY, randomZ);
+        obj.userData.type = "tablet";
+        obj.userData.baseY = obj.position.y;
+        obj.userData.floatOffset = Math.random() * Math.PI * 2;
+
+        tablets.push(obj);
+        scene.add(obj);
+    });
+}
+
+function checkNearbyCoffees() {
+      if (!player || inBattle) return;
+
+      let closestCoffee = null;
+      let closestDist = 2;
+
+      coffees.forEach(coffee => {
+          const dist = player.position.distanceTo(coffee.position);
+          if (dist < closestDist) {
+              closestCoffee = coffee;
+              closestDist = dist;
+          }
+      });
+
+      const objectPrompt = document.getElementById("objectPrompt");
+      if (closestCoffee) {
+          objectPrompt.style.display = "block";
+      } else {
+          objectPrompt.style.display = "none";
+      }
+
+      return closestCoffee;
+}
+
+function checkNearbyTablets() {
+    if (!player || inBattle) return;
+
+    let closestTablet = null;
+    let closestDist = 2;
+
+    tablets.forEach(tablet => {
+        const dist = player.position.distanceTo(tablet.position);
+        if (dist < closestDist) {
+            closestTablet = tablet;
+            closestDist = dist;
+        }
+    });
+	const objectPrompt = document.getElementById("objectPrompt");
+      if (closestTablet) {
+          objectPrompt.style.display = "block";
+      } else {
+          objectPrompt.style.display = "none";
+      }
+
+    return closestTablet;
+}
+
+document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        // 1. Revisar cafés
+        const coffee = checkNearbyCoffees();
+        if (coffee) {
+            playerStats.energy = Math.min(playerStats.maxEnergy, playerStats.energy + 15);
+
+            scene.remove(coffee);
+            const index = coffees.indexOf(coffee);
+            if (index !== -1) coffees.splice(index, 1);
+
+            updateEnergyUI();
+            return; // para no agarrar también tablet en el mismo frame
+        }
+
+        // 2. Revisar tabletas
+        const tablet = checkNearbyTablets();
+        if (tablet) {
+            playerStats.energy = Math.max(0, playerStats.energy - 20); // resta energía
+
+            scene.remove(tablet);
+            const index = tablets.indexOf(tablet);
+            if (index !== -1) tablets.splice(index, 1);
+
+            updateEnergyUI();
+        }
+      }
+});
+
+
 // Sistema de combate (copiado igual que en game.html)
 // ...existing code for battle system, event listeners, etc. copiado literalmente...
 
 // (startBattle ahora es provisto por battle.js)
 function updateBattleUI() {
 	const playerHPPercent = (playerStats.hp / playerStats.maxHp) * 100;
+	const playerEnergyPercent = (playerStats.energy / playerStats.maxEnergy) * 100;
 	const enemyHPPercent = (enemyStats.hp / enemyStats.maxHp) * 100;
+
 	document.getElementById('playerHP').style.width = playerHPPercent + '%';
+	document.getElementById('playerEnergy').style.width = playerEnergyPercent + '%';
 	document.getElementById('enemyHP').style.width = enemyHPPercent + '%';
+
 	document.getElementById('playerHPText').textContent = `HP: ${Math.max(0, playerStats.hp)}/${playerStats.maxHp}`;
+	document.getElementById('playerEnergyText').textContent = `Energia: ${Math.max(0, playerStats.energy)}/${playerStats.maxEnergy}`;
 	document.getElementById('enemyHPText').textContent = `HP: ${Math.max(0, enemyStats.hp)}/${enemyStats.maxHp}`;
 }
+
+
 function showMessage(message) {
 	document.getElementById('battleMessage').innerHTML = `<p style="margin: 0;">${message}</p>`;
 }
+
+function updateEnergyUI(){
+    const playerEnergyPercent = (playerStats.energy / playerStats.maxEnergy) * 100;
+    document.getElementById('playerEnergyUI').style.width = playerEnergyPercent + '%';
+    document.getElementById('playerEnergyTextUI').textContent = `Energia: ${Math.max(0, playerStats.energy)}/${playerStats.maxEnergy}`;
+}
+
 function playerAttack() {
 	if (!isPlayerTurn) return;
+	if(playerStats.energy <=3){
+        showMessage('No tienes energia suficiente para atacar!');
+        return;
+      }
 	playAttackSound();
 	const damage = Math.max(5, playerStats.attack - enemyStats.defense + Math.floor(Math.random() * 10));
 	enemyStats.hp -= damage;
 	showMessage(`${playerStats.name} atacó e hizo ${damage} de daño!`);
+
+	const energyCost = 3 + Math.floor(Math.random() * 4);
+    playerStats.energy = Math.max(0, playerStats.energy - energyCost);
+	
 	updateBattleUI();
 	if (enemyStats.hp <= 0) {
 		endBattle(true);
@@ -650,9 +787,17 @@ function playerAttack() {
 }
 function playerSpecialAttack() {
 	if (!isPlayerTurn) return;
+	if(playerStats.energy <=8){
+        showMessage('No tienes energia suficiente para un ataque especial!');
+        return;
+      }
 	playAttackSound();
 	const damage = Math.max(10, playerStats.attack * 1.5 - enemyStats.defense + Math.floor(Math.random() * 15));
 	enemyStats.hp -= damage;
+
+	const energyCost = 8 + Math.floor(Math.random() * 8);
+    playerStats.energy = Math.max(0, playerStats.energy - energyCost);  
+	
 	showMessage(`¡${playerStats.name} usó Ataque Especial e hizo ${damage} de daño!`);
 	updateBattleUI();
 	if (enemyStats.hp <= 0) {
@@ -715,7 +860,14 @@ function endBattle(won) {
 	setTimeout(() => {
 		stopBattleMusic();
 		if (won) {
-			alert(`¡Ganaste! Has derrotado a ${enemyStats.name}`);
+			Swal.fire({
+            title: "¡Ganaste!",
+            text: "Has derrotado a " + enemyStats.name,
+            imageUrl: "./assets/images/win-icon.png",
+            imageWidth: 100,
+            imageHeight: 100,
+            confirmButtonText: "¡Genial!"
+          });
 			persistLevelTwoScore();
 			if (currentBattleEnemy) {
 				scene.remove(currentBattleEnemy);
@@ -727,11 +879,32 @@ function endBattle(won) {
 					nearbyEnemy = null;
 					document.getElementById('interactPrompt').style.display = 'none';
 				}
-			}
+				if (enemies.length === 0) {
+					Swal.fire({
+					title: "¡Nivel completado!",
+					text: "Has derrotado a todos los enemigos",
+					imageUrl: "./assets/level-complete/win-icon.png",
+					imageWidth: 120,
+					imageHeight: 120,
+					confirmButtonText: "Volver al inicio"
+					}).then(() => {
+					window.location.href = "main.html";
+					});
+				}
+			}	
 		} else {
-			alert(`Has perdido el combate...`);
+			Swal.fire({
+            title: "¡Oh no!",
+            text: "Has perdido el combate",
+            imageUrl: "./assets/images/lose-icon.png",
+            imageWidth: 100,
+            imageHeight: 100,
+            confirmButtonText: "Entendido"
+          });
 		}
 		document.getElementById('battleUI').style.display = 'none';
+		EnergyUI.style.display = "block";
+        updateEnergyUI();
 		inBattle = false;
 		currentBattleEnemy = null;
 	}, 1500);
@@ -743,7 +916,7 @@ document.getElementById('runBtn').addEventListener('click', runFromBattle);
 
 // --- AUDIO DE ATAQUE ---
 function playAttackSound() {
-	const attackAudio = new Audio('../assets/Sonido/ATTACK.mp3');
+	const attackAudio = new Audio('./assets/Sonido/ATTACK.mp3');
 	attackAudio.volume = 1.0;
 	attackAudio.play();
 }
@@ -758,7 +931,7 @@ function playBattleMusic() {
 		battleMusic.pause();
 		battleMusic.currentTime = 0;
 	}
-	battleMusic = new Audio('../assets/Sonido/PELEA.mp3');
+	battleMusic = new Audio('./assets/Sonido/PELEA.mp3');
 	battleMusic.loop = true;
 	battleMusic.volume = 1.0;
 	battleMusic.play();
@@ -773,7 +946,3 @@ function stopBattleMusic() {
 		window.persistentMusic.audio.play();
 	}
 }
-
-// ...existing code for all game logic (movement, collision, battle, camera, animation loop, etc.) from game.html, adapted for level 2...
-
-// NOTA: Si necesitas que copie literalmente cada función y bloque, avísame para pegar el código completo aquí.

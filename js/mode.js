@@ -26,18 +26,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
   continueBtn?.addEventListener('click', () => {
     if (!selectedMode) {
-      alert('Selecciona un modo de juego.');
+      Swal.fire({
+        icon: "warning",
+        title: "Datos incompletos",
+        text: "Selecciona un modo de juego: ",
+        confirmButtonText: "Entendido"
+      });
       return;
     }
 
     if (selectedMode === 'individual') {
-      if (difficultySelect && !difficultySelect.value) {
-        alert('Selecciona una dificultad.');
-        return;
-      }
+      
+      const dificultad = difficultySelect.value;
+      // Guardar en localStorage
+      localStorage.setItem("dificultad", dificultad);
       window.location.href = 'level.html';
+
     } else {
-      alert('El modo multijugador estará disponible próximamente.');
+      alert('El modo multijugador estara disponible proximamente.');
     }
   });
+
 });

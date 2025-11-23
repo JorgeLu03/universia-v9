@@ -26,9 +26,9 @@ body{
 
 .top{
     display: flex;
-    justify-content: space-between;
     width: 100%;
     margin: 30px 0px;
+    gap: 140px;
 }
 
 .top img{
@@ -39,8 +39,8 @@ body{
 .center{
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center; 
+    justify-content:center;
+    align-items:center; 
 }
 
 h1{

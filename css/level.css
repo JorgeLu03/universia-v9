@@ -21,13 +21,13 @@ body {
 }
 
 .contenedor {
-    margin-top: 20px;
+    margin-top: 10px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     background-color: #fdf0d5a8;
-    padding: 40px 40px;
+    padding: 20px 20px;
     border: 50px solid;
     border-radius: 10%;
     border-image: url(../assets/images/border-2.png) 33% round;
@@ -55,15 +55,31 @@ h1 {
     width: 100%;
 }
 
+.nivel-card{
+    background-color: #437F97;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+    border: 20px solid;
+    border-radius: 10%;
+    border-image: url(../assets/images/border-5.png) 33% round;
+}
+
+.nivel-card img{
+    width: 256px;
+    height: 200px;
+}
+
 .nivel-btn {
     font-family: PixelifySans-SemiBold;
     font-size: 130%;
-    padding: 10px 20px;
+    padding: 0px 20px;
     background-color: #FDF0D5;
     color: #437F97;
-    border: 10px solid;
-    border-radius: 15%;
-    border-image: url(../assets/images/border-7.png) 33% round;
+    border: 20px solid;
+    border-radius: 25%;
+    border-image: url(../assets/images/border-5.png) 33% round;
     cursor: pointer;
     transition: background 0.2s, transform 0.2s, border-color 0.2s;
 }
@@ -71,7 +87,7 @@ h1 {
 .nivel-btn:hover, .nivel-btn.selected {
     background-color: #01295F;
     color: #FDF0D5;
-    border-image: url(../assets/images/border-9.png) 33% round;
+    border-image: url(../assets/images/border-4.png) 33% round;
     transform: scale(1.1);
 }
 

@@ -24,19 +24,19 @@ export class Player {
 
     loadPlayerModel(onLoaded) {
         const gltfLoader = new GLTFLoader();
-        gltfLoader.load("../assets/Anim/Estudiante.glb", (gltf) => {
+        gltfLoader.load("./assets/Anim/Estudiante.glb", (gltf) => {
             this.player = gltf.scene;
             this.player.scale.set(1.0, 1.0, 1.0);
             this.player.position.set(0, 0, 0);
             this.scene.add(this.player);
             this.playerMixer = new THREE.AnimationMixer(this.player);
-            gltfLoader.load("../assets/Anim/EstudianteIdle.glb", (idleGltf) => {
+            gltfLoader.load("./assets/Anim/EstudianteIdle.glb", (idleGltf) => {
                 if (idleGltf.animations && idleGltf.animations.length > 1) {
                     this.playerActions.idle = this.playerMixer.clipAction(idleGltf.animations[1]);
                     this.playerActions.idle.play();
                     this.activePlayerAction = this.playerActions.idle;
                 }
-                gltfLoader.load("../assets/Anim/EstudianteRun.glb", (runGltf) => {
+                gltfLoader.load("./assets/Anim/EstudianteRun.glb", (runGltf) => {
                     if (runGltf.animations && runGltf.animations.length > 2) {
                         this.playerActions.run = this.playerMixer.clipAction(runGltf.animations[2]);
                     }

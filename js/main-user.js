@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     playLink?.addEventListener('click', (event) => {
         if (!isAuthenticated) {
             event.preventDefault();
-            alert('Inicia sesión para acceder a los modos de juego.');
+            Swal.fire("No disponible", "Inicia sesion para acceder a los juegos", "info");
         }
     });
 
@@ -24,8 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 userNameDiv.style.display = 'block';
             }
             if (loginLink) {
-                loginLink.style.pointerEvents = 'none';
-                loginLink.style.opacity = '0.5';
+                loginLink.style.display = "none";
             }
             if (logoutBtn) {
                 logoutBtn.style.display = 'inline-block';
