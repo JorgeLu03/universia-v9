@@ -76,22 +76,16 @@ onAuthStateChanged(auth, (user) => {
     playerStats.name = currentUser.displayName;
 });
 
-if(dificultad === "normal"){
-      let enemyStats = {
-        name: "Enemigo",
-        hp: 100,
-        maxHp: 100,
-        attack: 15,
-        defense: 8
-      };
-    }else{
-      let enemyStats = {
-        name: "Enemigo",
-        hp: 100,
-        maxHp: 100,
-        attack: 22,
-        defense: 10
-      };
+let enemyStats = {
+    name: "Enemigo",
+    hp: 100,
+    maxHp: 100,
+    attack: 15,
+    defense: 8
+};
+if(dificultad === "dificil"){
+      enemyStats.attack = 22;
+	  enemyStats.defense = 10;
 }
 
 let isPlayerTurn = true;

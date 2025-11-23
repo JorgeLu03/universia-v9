@@ -13,7 +13,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   startButton?.addEventListener('click', () => {
     if (!selectedTarget) {
-      alert('Selecciona un nivel antes de comenzar.');
+      Swal.fire({
+        icon: "warning",
+        title: "Datos incompletos",
+        text: "Por favor selecciona un nivel. ",
+        confirmButtonText: "Entendido"
+      });
       return;
     }
     window.location.href = selectedTarget;
