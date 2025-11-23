@@ -31,10 +31,10 @@
     <div class="informacion"></div>
 
     <div id="EnergyUI">
-      <div style="background: #333; height: 20px; border-radius: 5px; overflow: hidden;">
-          <div id="playerEnergy" style="background: #FFB30F; height: 100%; width: 100%; transition: width 0.3s;"></div>
+      <div style="background: #01295F; height: 20px; border-radius: 5px; overflow: hidden;">
+          <div id="playerEnergyUI" style="background: #FFB30F; height: 100%; width: 100%; transition: width 0.3s;"></div>
         </div>
-        <p id="playerEnergyText" style="margin: 5px 0 0 0; font-size: 14px;">Energia: 100/100</p>
+        <p id="playerEnergyTextUI" style="margin: 5px 0 0 0; font-size: 14px;">Energia: 100/100</p>
     </div>
 
     <div id="escena3D"></div>
@@ -141,6 +141,9 @@
     });
 
     const dificultad = localStorage.getItem("dificultad") || "normal";
+    console.log("Dificultad cargada:", dificultad);
+
+    const EnergyUI = document.getElementById("EnergyUI");
     const contenedor = document.getElementById("escena3D");
 
     const scene = new THREE.Scene();
@@ -196,23 +199,18 @@
       energy: 100,
       maxEnergy: 100
     };
-    
-    if(dificultad === "normal"){
-      let enemyStats = {
+
+    let enemyStats = {
         name: "Enemigo",
         hp: 100,
         maxHp: 100,
         attack: 15,
         defense: 8
       };
-    }else{
-      let enemyStats = {
-        name: "Enemigo",
-        hp: 100,
-        maxHp: 100,
-        attack: 22,
-        defense: 10
-      };
+    
+    if(dificultad === "dificil"){
+      enemyStats.attack = 22;
+      enemyStats.defense = 10;
     }
 
     
@@ -768,7 +766,7 @@
       velocity.set(0, 0, 0); // Detener movimiento
 
       playBattleMusic();
-      
+      EnergyUI.style.display = "none";
       // Resetear stats
       playerStats.hp = playerStats.maxHp;
       playerStats.name = currentUser.displayName;
@@ -802,6 +800,12 @@
       document.getElementById('playerHPText').textContent = `HP: ${Math.max(0, playerStats.hp)}/${playerStats.maxHp}`;
       document.getElementById('playerEnergyText').textContent = `Energia: ${Math.max(0, playerStats.energy)}/${playerStats.maxEnergy}`;
       document.getElementById('enemyHPText').textContent = `HP: ${Math.max(0, enemyStats.hp)}/${enemyStats.maxHp}`;
+    }
+
+    function updateEnergyUI(){
+      const playerEnergyPercent = (playerStats.energy / playerStats.maxEnergy) * 100;
+      document.getElementById('playerEnergyUI').style.width = playerEnergyPercent + '%';
+      document.getElementById('playerEnergyTextUI').textContent = `Energia: ${Math.max(0, playerStats.energy)}/${playerStats.maxEnergy}`;
     }
 
     // Mostrar mensaje de batalla
@@ -961,6 +965,8 @@
           });
         }
         document.getElementById('battleUI').style.display = 'none';
+        EnergyUI.style.display = "block";
+        updateEnergyUI();
         inBattle = false;
         stopBattleMusic();
       }, 1500);

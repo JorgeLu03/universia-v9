@@ -130,6 +130,21 @@ body {
       cursor: pointer;
     }
 
+    /* Barrita de energia en la escena*/
+    #EnergyUI{
+      display: block;
+      position: absolute;
+      top: 20px;
+      padding: 5px 10px;
+      right: 170px;
+      width: 250px; 
+      background-color: #012a5fc4;
+      color: #FDF0D5;
+      border: 15px solid;
+      border-radius: 20px;
+      border-image: url(../assets/images/border-4.png) 33% round;
+    }
+
     #interactPrompt{
       font-family: PixelifySans-Regular;
     }
@@ -186,7 +201,7 @@ body {
       font-size: 16px;
     }
 
-    #playerHPText, #enemyHPText, #playerEnergyText{
+    #playerHPText, #enemyHPText, #playerEnergyText, #playerEnergyTextUI{
       font-family: PixelifySans-Regular;
       font-size: 14px;
     }
