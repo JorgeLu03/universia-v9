@@ -1,7 +1,36 @@
+import { auth } from './firebase-config.js';
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+document.addEventListener('DOMContentLoaded', () => {
+
+    const textarea = document.getElementById('mensaje');
+    const btnPublicar = document.getElementById('publicarBtn');
+    let isAuthenticated = false;
+
+    btnPublicar?.addEventListener('click', (event) => {
+        if (!isAuthenticated) {
+            event.preventDefault();
+            window.location.href = "login.html";
+        }else{
+            enviarPost();
+        }
+    });
+
+    onAuthStateChanged(auth, (user) => {
+        isAuthenticated = Boolean(user);
+        if (user) {
+            if (textarea) {
+                textarea.disabled = "false";
+            }
+            if(btnPublicar){
+                btnPublicar.textContent = "Publicar"
+            }
+        }
+    });
+});
 const publicarBtn = document.getElementById("publicarBtn");
 
-publicarBtn.addEventListener("click", async () => {
+async function enviarPost () {
     const mensaje = document.getElementById("mensaje").value.trim();
     const estado = document.getElementById("estado");
 
@@ -51,7 +80,7 @@ publicarBtn.addEventListener("click", async () => {
     publicarBtn.style.backgroundColor = "#849324";
 
     cargarPublicaciones();
-});
+};
 
 
 const feed = document.getElementById("feed");

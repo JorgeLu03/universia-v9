@@ -161,7 +161,7 @@ scene.add(directionalLight);
 
 // Escenario (Scenario2)
 const loaderGLB = new GLTFLoader();
-loaderGLB.load("../assets/models/Scenario2.glb", function (model) {
+loaderGLB.load("./assets/models/Scenario2.glb", function (model) {
 	scenarioModel = model.scene;
 	const originalScenarioBox = new THREE.Box3().setFromObject(scenarioModel);
 	const originalScenarioSize = new THREE.Vector3();
@@ -211,7 +211,7 @@ loaderGLB.load("../assets/models/Scenario2.glb", function (model) {
 });
 
 // Cargar modelo de colisiones internas (Scenario2Colissions)
-loaderGLB.load("../assets/models/Scenario2Colissions.glb", function (model) {
+loaderGLB.load("./assets/models/Scenario2Colissions.glb", function (model) {
 	const collisionModel = model.scene;
 	const originalCollisionBox = new THREE.Box3().setFromObject(collisionModel);
 	const originalCollisionSize = new THREE.Vector3();
@@ -269,7 +269,7 @@ loaderGLB.load("../assets/models/Scenario2Colissions.glb", function (model) {
 
 
 // Abeja - Enemigo
-loaderGLB.load("../assets/models/bee_cartoon.glb", function (model) {
+loaderGLB.load("./assets/models/bee_cartoon.glb", function (model) {
 	const obj = model.scene;
 	obj.scale.set(0.5, 0.5, 0.5);
 	obj.position.set(6, 2, 0);
@@ -280,7 +280,7 @@ loaderGLB.load("../assets/models/bee_cartoon.glb", function (model) {
 });
 
 // Oso - Enemigo (persigue al jugador)
-loaderGLB.load("../assets/models/ice_bear_we_bare_bears.glb", function (model) {
+loaderGLB.load("./assets/models/ice_bear_we_bare_bears.glb", function (model) {
 	const obj = model.scene;
 	obj.scale.set(0.4, 0.4, 0.4);
 	obj.position.set(12, 1.5, 7);
@@ -297,7 +297,7 @@ loaderGLB.load("../assets/models/ice_bear_we_bare_bears.glb", function (model) {
 });
 
 // Tucan - Enemigo
-loaderGLB.load("../assets/models/low_poly_toucan.glb", function (model) {
+loaderGLB.load("./assets/models/low_poly_toucan.glb", function (model) {
 	const obj = model.scene;
 	obj.rotateY(-Math.PI / 2);
 	obj.scale.set(0.12, 0.12, 0.12);
@@ -311,7 +311,7 @@ loaderGLB.load("../assets/models/low_poly_toucan.glb", function (model) {
 // Elephant Anim - Enemigo
 let mixer;
 const animScene = new GLTFLoader();
-animScene.load("../assets/models/elephant.glb", function (model) {
+animScene.load("./assets/models/elephant.glb", function (model) {
 	const obj = model.scene;
 	obj.rotateY(-Math.PI / 2);
 	obj.scale.set(1.6, 1.6, 1.6);
@@ -335,7 +335,7 @@ playerController.loadPlayerModel(() => {
 
 // Owl Anim
 let mixer2;
-animScene.load("../assets/models/day_20_-_snowy_owl.glb", function (model) {
+animScene.load("./assets/models/day_20_-_snowy_owl.glb", function (model) {
 	const obj = model.scene;
 	obj.scale.set(1.5, 1.5, 1.5);
 	obj.position.set(-5, 2, -8.66);
@@ -743,7 +743,7 @@ document.getElementById('runBtn').addEventListener('click', runFromBattle);
 
 // --- AUDIO DE ATAQUE ---
 function playAttackSound() {
-	const attackAudio = new Audio('../assets/Sonido/ATTACK.mp3');
+	const attackAudio = new Audio('./assets/Sonido/ATTACK.mp3');
 	attackAudio.volume = 1.0;
 	attackAudio.play();
 }
@@ -758,7 +758,7 @@ function playBattleMusic() {
 		battleMusic.pause();
 		battleMusic.currentTime = 0;
 	}
-	battleMusic = new Audio('../assets/Sonido/PELEA.mp3');
+	battleMusic = new Audio('./assets/Sonido/PELEA.mp3');
 	battleMusic.loop = true;
 	battleMusic.volume = 1.0;
 	battleMusic.play();

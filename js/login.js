@@ -10,14 +10,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const email = document.getElementById('login-email')?.value.trim();
             const password = document.getElementById('login-password')?.value;
             if (!email || !password) {
-                alert('Por favor, completa todos los campos.');
+                Swal.fire("Datos incompletos", "Por favor llena todos los campos", "warning");
                 return;
             }
             try {
                 await signInWithEmailAndPassword(auth, email, password);
-                window.location.href = 'main.html';
+                Swal.fire("Bienvenido", "Inicio de sesion exitoso", "success")
+                .then(() => {
+                    window.location.href = "main.html";
+                });
             } catch (error) {
-                alert('Error al iniciar sesión: ' + error.message);
+                console.error('Error detallado en el registro:', error);
+                Swal.fire({
+                icon: "error",
+                title: "Ocurrio un problema",
+                text: "No se pudo iniciar sesion: " + error.message,
+                confirmButtonText: "Entendido"
+            });
             }
         });
     }

@@ -1,0 +1,49 @@
+@font-face {
+    font-family: "PixelifySans-SemiBold";
+    src: url(../assets/fonts/Pixelify_Sans/PixelifySans-SemiBold.ttf)format(truetype);
+}
+
+@font-face {
+    font-family: "Daydream";
+    src: url(../assets/fonts/daydream_3/Daydream\ DEMO.otf)format(truetype);
+}
+
+
+/* Título */
+.swal2-title {
+    font-family: Daydream;
+}
+
+/* Mensaje */
+.swal2-html-container {
+    font-family: PixelifySans-SemiBold;
+}
+
+/* Botones */
+.swal2-confirm,
+.swal2-cancel {
+    font-family: PixelifySans-SemiBold;
+    font-size: 140%;
+    color: #FDF0D5;
+    border: 30px solid;
+    border-radius: 30%;
+    border-image: url(../assets/images/border-1.png) 33% round;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+    padding: 0 10px;
+}
+
+.swal2-confirm{
+    background-color: #849324;
+}
+
+.swal2-cancel{
+    background-color: #FD151B;
+}
+
+/* Modal */
+.swal2-popup{
+    background-color: #FDF0D5;
+    border-radius: 10%;
+    border-image: url(../assets/images/border-1.png) 33% round;
+}

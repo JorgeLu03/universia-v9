@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Universia</title>
+    <link rel="stylesheet" href="css/sweet-alert.css">
     <link rel="stylesheet" href="css/settings.css">
 </head>
 <body>
@@ -11,23 +12,14 @@
         <h1>Configuracion</h1>
         <div class="informacion">
             <div class="opciones">
-                <label for="username">Nombre de usuario</label>
+                <label for="username" >Nombre de usuario</label>
                 <input type="text" id="username" placeholder="Tu nombre de usuario" disabled>
 
-                <label for="avatar">Selecciona tu avatar</label>
-                <div class="avatar-list">
-                    <img src="assets/images/user24.png" class="avatar" alt="Avatar 1">
-                    <img src="assets/images/user24-1.png" class="avatar" alt="Avatar 2">
-                </div>
+                <label for="correo">Correo electronico</label>
+                <input type="email" id="correo" placeholder="Tu correo" disabled>
 
                 <label for="volume">Volumen</label>
                 <input type="range" id="volume" min="0" max="100" value="80">
-
-                <label for="language">Idioma</label>
-                <select id="language">
-                    <option value="es">Español</option>
-                    <option value="en">English</option>
-                </select>
             </div>
         </div>
         <div class="botones">
@@ -37,5 +29,6 @@
     </div>
     <script src="js/background-music.js"></script>
     <script type="module" src="js/settings.js"></script>
+    <script src="js/sweetalert2.all.min.js"></script>
 </body>
 </html>

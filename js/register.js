@@ -9,15 +9,19 @@ async function siguiente() {
     const username = document.getElementById('username')?.value.trim();
     const password = document.getElementById('password')?.value;
     const confirmPassword = document.getElementById('confirm-password')?.value;
-    const div1 = document.getElementById('datosP');
-    const div2 = document.getElementById('datosJ');
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!email || !username || !password || !confirmPassword) {
-        alert('Por favor, completa todos los campos.');
+        Swal.fire("Datos incompletos", "Por favor llena todos los campos", "warning");
+        return;
+    }
+    if (!emailRegex.test(email)) {
+        Swal.fire("Correo invalido", "Por favor ingresa un correo valido", "warning");
         return;
     }
     if (password !== confirmPassword) {
-        alert('Las contraseñas no coinciden.');
+        Swal.fire("Error", "Las contraseñas no coinciden", "warning");
         return;
     }
 
@@ -41,13 +45,19 @@ async function siguiente() {
             uid: user.uid
         });
         console.log('Datos guardados en Firestore.');
-
-        // Redirigir al login tras registro exitoso
-        console.log('Registro exitoso. Redirigiendo a login.html...');
-        window.location.href = 'login.html';
+        Swal.fire("Éxito", "Usuario registrado correctamente", "success")
+        .then(() => {
+            console.log('Registro exitoso. Redirigiendo a login.html...');
+            window.location.href = "login.html";
+        });
     } catch (error) {
         console.error('Error detallado en el registro:', error);
-        alert('Error en el registro: ' + error.message);
+        Swal.fire({
+        icon: "error",
+        title: "Ocurrió un problema",
+        text: "No se pudo registrar: " + error.message,
+        confirmButtonText: "Entendido"
+      });
     }
 }
 

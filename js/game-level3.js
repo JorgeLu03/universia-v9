@@ -29,7 +29,7 @@ function startBattle(enemy) {
 			window.battleAudio.pause();
 			window.battleAudio.currentTime = 0;
 		}
-		window.battleAudio = new Audio('../assets/Sonido/PELEA.mp3');
+		window.battleAudio = new Audio('./assets/Sonido/PELEA.mp3');
 		window.battleAudio.volume = 1.0;
 		window.battleAudio.loop = true;
 		window.battleAudio.play();
@@ -199,7 +199,7 @@ scene.add(directionalLight);
 
 // Escenario (Scenario3)
 const loaderGLB = new GLTFLoader();
-loaderGLB.load("../assets/models/scenario3.glb", function (model) {
+loaderGLB.load("./assets/models/scenario3.glb", function (model) {
 	scenarioModel = model.scene;
 	scenarioModel.scale.set(scenarioScale, scenarioScale, scenarioScale);
 	scenarioModel.position.copy(scenarioPosition);
@@ -220,7 +220,7 @@ playerController.loadPlayerModel(() => {
 // });
 
 // --- Enemigos ---
-loaderGLB.load("../assets/models/bee_cartoon.glb", function (model) {
+loaderGLB.load("./assets/models/bee_cartoon.glb", function (model) {
 	const obj = model.scene;
 	obj.scale.set(0.5, 0.5, 0.5);
 	obj.position.set(6, 2, 0);
@@ -229,7 +229,7 @@ loaderGLB.load("../assets/models/bee_cartoon.glb", function (model) {
 	scene.add(obj);
 	enemies.push(obj);
 });
-loaderGLB.load("../assets/models/ice_bear_we_bare_bears.glb", function (model) {
+loaderGLB.load("./assets/models/ice_bear_we_bare_bears.glb", function (model) {
 	const obj = model.scene;
 	obj.scale.set(0.4, 0.4, 0.4);
 	obj.position.set(12, 1.5, 7);
@@ -244,7 +244,7 @@ loaderGLB.load("../assets/models/ice_bear_we_bare_bears.glb", function (model) {
 	scene.add(obj);
 	enemies.push(obj);
 });
-loaderGLB.load("../assets/models/low_poly_toucan.glb", function (model) {
+loaderGLB.load("./assets/models/low_poly_toucan.glb", function (model) {
 	const obj = model.scene;
 	obj.rotateY(-Math.PI / 2);
 	obj.scale.set(0.12, 0.12, 0.12);
@@ -256,7 +256,7 @@ loaderGLB.load("../assets/models/low_poly_toucan.glb", function (model) {
 });
 let mixer;
 const animScene = new GLTFLoader();
-animScene.load("../assets/models/elephant.glb", function (model) {
+animScene.load("./assets/models/elephant.glb", function (model) {
 	const obj = model.scene;
 	obj.rotateY(-Math.PI / 2);
 	obj.scale.set(1.6, 1.6, 1.6);
@@ -274,7 +274,7 @@ animScene.load("../assets/models/elephant.glb", function (model) {
 
 // Owl Anim
 let mixer2;
-animScene.load("../assets/models/day_20_-_snowy_owl.glb", function (model) {
+animScene.load("./assets/models/day_20_-_snowy_owl.glb", function (model) {
 	const obj = model.scene;
 	obj.scale.set(1.5, 1.5, 1.5);
 	obj.position.set(-5, 2, -8.66);
@@ -710,7 +710,7 @@ document.getElementById('runBtn').addEventListener('click', runFromBattle);
 
 // --- AUDIO DE ATAQUE ---
 function playAttackSound() {
-	const attackAudio = new Audio('../assets/Sonido/ATTACK.mp3');
+	const attackAudio = new Audio('./assets/Sonido/ATTACK.mp3');
 	attackAudio.volume = 1.0;
 	attackAudio.play();
 }
