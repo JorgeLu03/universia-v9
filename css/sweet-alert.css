@@ -36,9 +36,14 @@
 .swal2-confirm{
     background-color: #849324;
 }
-
+.swal2-confirm:hover{
+    background-color: #437F97;
+}
 .swal2-cancel{
     background-color: #FD151B;
+}
+.swal2-cancel:hover{
+    background-color: #FFB30F;
 }
 
 /* Modal */

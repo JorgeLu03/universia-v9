@@ -28,11 +28,18 @@
         </div>
         <div class="informacion"></div>
 
+        <!-- UI Fuera de Batalla-->
         <div id="EnergyUI">
             <div style="background: #01295F; height: 20px; border-radius: 5px; overflow: hidden;">
                 <div id="playerEnergyUI" style="background: #FFB30F; height: 100%; width: 100%; transition: width 0.3s;"></div>
             </div>
             <p id="playerEnergyTextUI" style="margin: 5px 0 0 0; font-size: 14px;">Energia: 100/100</p>
+        </div>
+        <div id="HPUI">
+            <div style="background: #333; height: 20px; border-radius: 5px; overflow: hidden;">
+                <div id="playerHPUI" style="background: #849324; height: 100%; width: 100%; transition: width 0.3s;"></div>
+            </div>
+            <p id="playerHPTextUI" style="margin: 5px 0 0 0; font-size: 14px;">HP: 100/100</p>
         </div>
 
         <div id="escena3D"></div>
@@ -78,6 +85,14 @@
             border-radius: 10px; color: #FDF0D5; font-size: 18px;">
             Presiona <strong>E</strong> para iniciar combate
         </div>
+
+        <!-- Indicador de objetos especiales -->
+        <p id="objectPrompt"
+        style="display:none; position:absolute; top:30%; left:50%; transform: translate(-50%, -50%); 
+                color:#FDF0D5; font-size:18px; background:#012a5fc4; padding:15px 30px; border-radius:10px;">
+        Presiona <strong>ESPACIO</strong> para tomar el objeto
+        </p>
+        
     </div>
     <script src="js/sweetalert2.all.min.js"></script>
     <script src="js/pause-menu"></script>

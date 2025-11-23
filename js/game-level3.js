@@ -1,6 +1,7 @@
 import { auth } from '../js/firebase-config.js';
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+
 // --- LÓGICA DE BATALLA Y ATAQUE ---
 
 function startBattle(enemy) {
@@ -23,6 +24,7 @@ function startBattle(enemy) {
 	// Muestra la UI de batalla
 	document.getElementById('battleUI').style.display = 'block';
 	document.getElementById('enemyName').textContent = enemyStats.name;
+	HTMLPictureElement.style.display = "none";
 	updateBattleUI();
 	showMessage('Presiona ATACAR para comenzar el combate');
 	// Reproduce el sonido de PELEA
@@ -55,6 +57,7 @@ const dificultad = localStorage.getItem("dificultad") || "normal";
 const contenedor = document.getElementById("escena3D");
 
 const EnergyUI = document.getElementById("EnergyUI");
+const HPUI = document.getElementById("HPUI");
 const scene = new THREE.Scene();
 scene.background = new THREE.Color("#34495E");
 
@@ -65,7 +68,7 @@ const camera = new THREE.PerspectiveCamera(
 camera.position.set(0, 30, -50);
 
 // --- Player system ---
-const maxSpeed = 0.035;
+const maxSpeed = 0.05;
 const acceleration = 0.002;
 const deceleration = 0.95;
 const rotationSpeed = 0.1;
@@ -182,7 +185,8 @@ playerController.loadPlayerModel(() => {
 loaderGLB.load("./assets/models/bee_cartoon.glb", function (model) {
 	const obj = model.scene;
 	obj.scale.set(0.5, 0.5, 0.5);
-	obj.position.set(6, 2, 0);
+	obj.rotateY(-Math.PI / 2);
+	obj.position.set(9, 1.8, 15);
 	obj.userData.enemyName = "Abeja";
 	obj.userData.isEnemy = true;
 	scene.add(obj);
@@ -191,8 +195,7 @@ loaderGLB.load("./assets/models/bee_cartoon.glb", function (model) {
 loaderGLB.load("./assets/models/ice_bear_we_bare_bears.glb", function (model) {
 	const obj = model.scene;
 	obj.scale.set(0.4, 0.4, 0.4);
-	obj.position.set(12, 1.5, 7);
-	obj.rotateY(-Math.PI / 2);
+	obj.position.set(0, 1.5, -10);
 	obj.userData.enemyName = "Oso";
 	obj.userData.isEnemy = true;
 	obj.userData.detectionRange = 8;
@@ -217,9 +220,9 @@ let mixer;
 const animScene = new GLTFLoader();
 animScene.load("./assets/models/elephant.glb", function (model) {
 	const obj = model.scene;
-	obj.rotateY(-Math.PI / 2);
+	obj.rotateY(Math.PI / 2);
 	obj.scale.set(1.6, 1.6, 1.6);
-	obj.position.set(10, 0, -8.66);
+	obj.position.set(-6, 0, 18);
 	obj.userData.enemyName = "Elefante";
 	obj.userData.isEnemy = true;
 	scene.add(obj);
@@ -235,13 +238,170 @@ animScene.load("./assets/models/elephant.glb", function (model) {
 let mixer2;
 animScene.load("./assets/models/day_20_-_snowy_owl.glb", function (model) {
 	const obj = model.scene;
+	obj.rotateY(-1.5);
 	obj.scale.set(1.5, 1.5, 1.5);
-	obj.position.set(-5, 2, -8.66);
+	obj.position.set(10, 2, 5);
+	obj.userData.enemyName = "Buho";
+    obj.userData.isEnemy = true;
 	scene.add(obj);
+	enemies.push(obj);
+
 	mixer2 = new THREE.AnimationMixer(obj);
 	const action2 = mixer2.clipAction(model.animations[0]);
 	action2.play();
 });
+
+
+/* OBJETOS ESPECIALES */
+
+function aplicarBrilloModelos(model) {
+	  model.traverse((child) => {
+			if (child.isMesh) {
+				child.material.emissive = new THREE.Color("rgb(70%, 30%, 30%)");  // tono cálido
+				child.material.emissiveIntensity = 0.2;               // brillo (0–1)
+			}
+	  });
+}
+
+const coffeeCount = Math.floor(Math.random() * 3) + 1;
+const coffees = [];
+
+for (let i = 0; i < coffeeCount; i++) {
+	  loaderGLB.load("assets/models/coffee_cup.glb", function (model) {
+		const obj = model.scene;
+		aplicarBrilloModelos(obj);
+		obj.scale.set(0.15, 0.15, 0.15);
+
+		const randomX = Math.random() * 24 - 12;
+		const randomZ = Math.random() * 32 - 16;
+		const randomY = 0.8;
+
+		obj.position.set(randomX, randomY, randomZ);
+		obj.userData.type = "coffee";
+		obj.userData.baseY = obj.position.y;
+		obj.userData.floatOffset = Math.random() * Math.PI * 2;
+
+		coffees.push(obj);
+		scene.add(obj);
+	  });
+}
+
+const tabletCount = Math.floor(Math.random() * 2) + 1; // 1–2 tabletas
+const tablets = [];
+
+for (let i = 0; i < tabletCount; i++) {
+	loaderGLB.load("assets/models/tablet_folder.glb", function (model) {
+		const obj = model.scene;
+		aplicarBrilloModelos(obj);
+
+		obj.scale.set(0.03, 0.03, 0.03);
+
+		const randomX = Math.random() * 20 - 10;
+		const randomZ = Math.random() * 20 - 10;
+		const randomY = 0.8;
+
+		obj.position.set(randomX, randomY, randomZ);
+		obj.userData.type = "tablet";
+		obj.userData.baseY = obj.position.y;
+		obj.userData.floatOffset = Math.random() * Math.PI * 2;
+
+		tablets.push(obj);
+		scene.add(obj);
+	});
+}
+
+const sandwiches = [];
+const sandwichCount = Math.floor(Math.random() * 3) + 1;
+
+for (let i = 0; i < sandwichCount; i++) {
+    loaderGLB.load("assets/models/sandwich.glb", function (model) {
+        const obj = model.scene;
+
+        aplicarBrilloModelos(obj);
+        obj.scale.set(0.4, 0.4, 0.4);
+
+        const randomX = Math.random() * 24 - 12;
+        const randomZ = Math.random() * 32 - 16;
+        const randomY = 0.8;
+
+        obj.position.set(randomX, randomY, randomZ);
+        obj.userData.type = "sandwich";
+        obj.userData.baseY = obj.position.y;
+        obj.userData.floatOffset = Math.random() * Math.PI * 2;
+
+        sandwiches.push(obj);
+        scene.add(obj);
+    });
+}
+
+const objectPrompt = document.getElementById("objectPrompt");
+
+function checkNearbyObjects() {
+    if (!player || inBattle) return null;
+
+    let closestObject = null;
+    let closestDist = 2;
+
+    // Buscar cafés
+    coffees.forEach(obj => {
+        const dist = player.position.distanceTo(obj.position);
+        if (dist < closestDist) {
+            closestObject = obj;
+            closestDist = dist;
+        }
+    });
+
+    // Buscar tabletas
+    tablets.forEach(obj => {
+        const dist = player.position.distanceTo(obj.position);
+        if (dist < closestDist) {
+            closestObject = obj;
+            closestDist = dist;
+        }
+    });
+
+    // Buscar sandwiches
+    sandwiches.forEach(obj => {
+        const dist = player.position.distanceTo(obj.position);
+        if (dist < closestDist) {
+            closestObject = obj;
+            closestDist = dist;
+        }
+    });
+
+    objectPrompt.style.display = closestObject ? "block" : "none";
+
+    return closestObject;
+}
+
+document.addEventListener('keydown', (e) => {
+	  if (e.code === 'Space') {
+		const obj = checkNearbyObjects();
+        if (!obj) return;
+
+        if (obj.userData.type === "coffee") {
+            playerStats.energy = Math.min(playerStats.maxEnergy, playerStats.energy + 15);
+            coffees.splice(coffees.indexOf(obj), 1);
+        }
+
+        if (obj.userData.type === "tablet") {
+            playerStats.energy = Math.max(0, playerStats.energy - 20);
+            tablets.splice(tablets.indexOf(obj), 1);
+        }
+
+		if (obj.userData.type === "sandwich") {
+            playerStats.hp = Math.min(playerStats.maxHp, playerStats.hp + 20);
+            sandwiches.splice(sandwiches.indexOf(obj), 1);
+        }
+
+        // Quitar de la escena
+        scene.remove(obj);
+
+		updateHPUI();
+        updateEnergyUI();
+	  }
+});
+
 
 // Controles de teclado para el personaje principal
 window.addEventListener('keydown', (e) => {
@@ -253,6 +413,7 @@ window.addEventListener('keydown', (e) => {
 	if (key === 'e') {
 		if (nearbyEnemy && !inBattle) {
 			EnergyUI.style.display = "none";
+			HPUI.style.display = "none";
 			startBattle(nearbyEnemy);
 		}
 	}
@@ -348,7 +509,7 @@ function calculateSlideVelocity(velocity, normal) {
 function pushPlayerOutOfCollisions() {
 	if (!player || boundaryObjects.length === 0) return;
 	const playerBox = new THREE.Box3().setFromObject(player);
-	const pushDistance = 0.1;
+	const pushDistance = 0.01;
 	const maxIterations = 10;
 	const originalY = player.position.y;
 	for (let iteration = 0; iteration < maxIterations; iteration++) {
@@ -476,6 +637,18 @@ function animate() {
 		if (mixer) mixer.update(delta);
 		if (playerController) playerController.updateMixer(delta);
 		if (mixer2) mixer2.update(delta);
+		//Objetos especiales
+        scene.traverse(obj => {
+            if (obj.userData.type === "coffee" || obj.userData.type === "tablet" || obj.userData.type === "sandwich") {
+                obj.rotation.y += 0.003;
+                const amplitude = 0.15;    // cuánto sube/baja
+                const speed = 1.5;         // qué tan rápido flota
+                const elapsed = clock.getElapsedTime();
+                obj.position.y = obj.userData.baseY 
+                              + Math.sin(elapsed * speed + obj.userData.floatOffset) * amplitude;
+            }
+        });
+		checkNearbyObjects();
 		updatePlayerMovement();
 		updateAggressiveEnemies();
 		checkNearbyEnemies();
@@ -518,7 +691,11 @@ function updateEnergyUI(){
     document.getElementById('playerEnergyUI').style.width = playerEnergyPercent + '%';
     document.getElementById('playerEnergyTextUI').textContent = `Energia: ${Math.max(0, playerStats.energy)}/${playerStats.maxEnergy}`;
 }
-
+function updateHPUI(){
+	const playerHPPercent = (playerStats.hp / playerStats.maxHp) * 100;
+    document.getElementById('playerHPUI').style.width = playerHPPercent + '%';
+    document.getElementById('playerHPTextUI').textContent = `HP: ${Math.max(0, playerStats.hp)}/${playerStats.maxHp}`;
+}
 function playerAttack() {
 	if (!isPlayerTurn) return;
 	if(playerStats.energy <=3){
@@ -650,16 +827,20 @@ function endBattle(won) {
 		} else {
 			Swal.fire({
             title: "¡Oh no!",
-            text: "Has perdido el combate",
-            imageUrl: "./assets/images/lose-icon.png",
+            text: "No has podido completar este nivel",
+            imageUrl: "./assets/images/death.png",
             imageWidth: 100,
             imageHeight: 100,
-            confirmButtonText: "Entendido"
-          });
+            confirmButtonText: "Volver al inicio"
+          }).then(() => {
+				window.location.href = "main.html";
+			});
 		}
 		document.getElementById('battleUI').style.display = 'none';
 		EnergyUI.style.display = "block";
+		HPUI.style.display = "block";
         updateEnergyUI();
+		updateHPUI();
 		inBattle = false;
 		currentBattleEnemy = null;
 		// Detiene el audio de combate si existe

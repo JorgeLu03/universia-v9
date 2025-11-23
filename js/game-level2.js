@@ -26,7 +26,7 @@ const camera = new THREE.PerspectiveCamera(
 camera.position.set(0, 30, -50);
 
 // --- Player system ---
-const maxSpeed = 0.035;
+const maxSpeed = 0.05;
 const acceleration = 0.002;
 const deceleration = 0.95;
 const rotationSpeed = 0.1;
@@ -232,7 +232,8 @@ loaderGLB.load("./assets/models/Scenario2Colissions.glb", function (model) {
 loaderGLB.load("./assets/models/bee_cartoon.glb", function (model) {
 	const obj = model.scene;
 	obj.scale.set(0.5, 0.5, 0.5);
-	obj.position.set(6, 2, 0);
+	obj.rotateY(2);
+	obj.position.set(-7, 1.5, 1);
 	obj.userData.enemyName = "Abeja";
 	obj.userData.isEnemy = true;
 	scene.add(obj);
@@ -243,8 +244,8 @@ loaderGLB.load("./assets/models/bee_cartoon.glb", function (model) {
 loaderGLB.load("./assets/models/ice_bear_we_bare_bears.glb", function (model) {
 	const obj = model.scene;
 	obj.scale.set(0.4, 0.4, 0.4);
-	obj.position.set(12, 1.5, 7);
-	obj.rotateY(-Math.PI / 2);
+	obj.position.set(6, 1.5, -8);
+	obj.rotateY(-0.5);
 	obj.userData.enemyName = "Oso";
 	obj.userData.isEnemy = true;
 	obj.userData.detectionRange = 8;
@@ -259,9 +260,9 @@ loaderGLB.load("./assets/models/ice_bear_we_bare_bears.glb", function (model) {
 // Tucan - Enemigo
 loaderGLB.load("./assets/models/low_poly_toucan.glb", function (model) {
 	const obj = model.scene;
-	obj.rotateY(-Math.PI / 2);
+	obj.rotateY(Math.PI / 2);
 	obj.scale.set(0.12, 0.12, 0.12);
-	obj.position.set(-10, 0, 0);
+	obj.position.set(6, 0, -3);
 	obj.userData.enemyName = "Tucán";
 	obj.userData.isEnemy = true;
 	scene.add(obj);
@@ -273,9 +274,9 @@ let mixer;
 const animScene = new GLTFLoader();
 animScene.load("./assets/models/elephant.glb", function (model) {
 	const obj = model.scene;
-	obj.rotateY(-Math.PI / 2);
-	obj.scale.set(1.6, 1.6, 1.6);
-	obj.position.set(10, 0, -8.66);
+	obj.rotateY(2.5);
+	obj.scale.set(1.4, 1.4, 1.4);
+	obj.position.set(6, 0, 5);
 	obj.userData.enemyName = "Elefante";
 	obj.userData.isEnemy = true;
 	scene.add(obj);
@@ -297,9 +298,14 @@ playerController.loadPlayerModel(() => {
 let mixer2;
 animScene.load("./assets/models/day_20_-_snowy_owl.glb", function (model) {
 	const obj = model.scene;
+	obj.rotateY(1);
 	obj.scale.set(1.5, 1.5, 1.5);
-	obj.position.set(-5, 2, -8.66);
+	obj.position.set(-5, 2, -8);
+	obj.userData.enemyName = "Buho";
+    obj.userData.isEnemy = true;
 	scene.add(obj);
+	enemies.push(obj);
+
 	mixer2 = new THREE.AnimationMixer(obj);
 	const action2 = mixer2.clipAction(model.animations[0]);
 	action2.play();
@@ -435,7 +441,7 @@ function calculateSlideVelocity(velocity, normal) {
 function pushPlayerOutOfCollisions() {
 	if (!player || boundaryObjects.length === 0) return;
 	const playerBox = new THREE.Box3().setFromObject(player);
-	const pushDistance = 0.1;
+	const pushDistance = 0.01;
 	const maxIterations = 10;
 	const originalY = player.position.y;
 	for (let iteration = 0; iteration < maxIterations; iteration++) {
@@ -506,7 +512,7 @@ function updateAggressiveEnemies() {
 		enemies.forEach(enemy => {
 			if (!enemy.userData.isAggressive) return;
 			const distance = player.position.distanceTo(enemy.position);
-			console.log(`[DEBUG][N2] Distancia jugador-oso: ${distance}`);
+			//console.log(`[DEBUG][N2] Distancia jugador-oso: ${distance}`);
 			const detectionRange = enemy.userData.detectionRange || 8;
 			const chaseSpeed = enemy.userData.chaseSpeed || 0.08;
 			const attackRange = interactionDistance;
@@ -571,6 +577,19 @@ function animate() {
 		if (mixer) mixer.update(delta);
 		if (playerController) playerController.updateMixer(delta);
 		if (mixer2) mixer2.update(delta);
+		//Objetos especiales
+        scene.traverse(obj => {
+            if (obj.userData.type === "coffee" || obj.userData.type === "tablet") {
+                obj.rotation.y += 0.003;
+                const amplitude = 0.15;    // cuánto sube/baja
+                const speed = 1.5;         // qué tan rápido flota
+                const elapsed = clock.getElapsedTime();
+                obj.position.y = obj.userData.baseY 
+                              + Math.sin(elapsed * speed + obj.userData.floatOffset) * amplitude;
+            }
+        });
+		checkNearbyCoffees();
+		checkNearbyTablets();
 		updatePlayerMovement();
 		updateAggressiveEnemies();
 		checkNearbyEnemies();
@@ -579,6 +598,141 @@ function animate() {
 	renderer.render(scene, camera);
 }
 animate();
+
+/* OBJETOS ESPECIALES */
+
+function aplicarBrilloModelos(model) {
+      model.traverse((child) => {
+            if (child.isMesh) {
+                child.material.emissive = new THREE.Color("rgb(70%, 30%, 30%)");  // tono cálido
+                child.material.emissiveIntensity = 0.2;               // brillo (0–1)
+            }
+      });
+}
+
+const coffeeCount = Math.floor(Math.random() * 3) + 1;
+const coffees = [];
+
+for (let i = 0; i < coffeeCount; i++) {
+      loaderGLB.load("assets/models/coffee_cup.glb", function (model) {
+        const obj = model.scene;
+        aplicarBrilloModelos(obj);
+        obj.scale.set(0.15, 0.15, 0.15);
+
+        const randomX = Math.random() * 20 - 10;
+        const randomZ = Math.random() * 20 - 10;
+        const randomY = 0.8;
+
+        obj.position.set(randomX, randomY, randomZ);
+        obj.userData.type = "coffee";
+        obj.userData.baseY = obj.position.y;
+        obj.userData.floatOffset = Math.random() * Math.PI * 2;
+
+        coffees.push(obj);
+        scene.add(obj);
+      });
+}
+
+const tabletCount = Math.floor(Math.random() * 2) + 1; // 1–2 tabletas
+const tablets = [];
+
+for (let i = 0; i < tabletCount; i++) {
+    loaderGLB.load("assets/models/tablet_folder.glb", function (model) {
+        const obj = model.scene;
+        aplicarBrilloModelos(obj);
+
+        obj.scale.set(0.03, 0.03, 0.03);
+
+        const randomX = Math.random() * 20 - 10;
+        const randomZ = Math.random() * 20 - 10;
+        const randomY = 0.8;
+
+        obj.position.set(randomX, randomY, randomZ);
+        obj.userData.type = "tablet";
+        obj.userData.baseY = obj.position.y;
+        obj.userData.floatOffset = Math.random() * Math.PI * 2;
+
+        tablets.push(obj);
+        scene.add(obj);
+    });
+}
+
+function checkNearbyCoffees() {
+      if (!player || inBattle) return;
+
+      let closestCoffee = null;
+      let closestDist = 2;
+
+      coffees.forEach(coffee => {
+          const dist = player.position.distanceTo(coffee.position);
+          if (dist < closestDist) {
+              closestCoffee = coffee;
+              closestDist = dist;
+          }
+      });
+
+      const objectPrompt = document.getElementById("objectPrompt");
+      if (closestCoffee) {
+          objectPrompt.style.display = "block";
+      } else {
+          objectPrompt.style.display = "none";
+      }
+
+      return closestCoffee;
+}
+
+function checkNearbyTablets() {
+    if (!player || inBattle) return;
+
+    let closestTablet = null;
+    let closestDist = 2;
+
+    tablets.forEach(tablet => {
+        const dist = player.position.distanceTo(tablet.position);
+        if (dist < closestDist) {
+            closestTablet = tablet;
+            closestDist = dist;
+        }
+    });
+	const objectPrompt = document.getElementById("objectPrompt");
+      if (closestTablet) {
+          objectPrompt.style.display = "block";
+      } else {
+          objectPrompt.style.display = "none";
+      }
+
+    return closestTablet;
+}
+
+document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        // 1. Revisar cafés
+        const coffee = checkNearbyCoffees();
+        if (coffee) {
+            playerStats.energy = Math.min(playerStats.maxEnergy, playerStats.energy + 15);
+
+            scene.remove(coffee);
+            const index = coffees.indexOf(coffee);
+            if (index !== -1) coffees.splice(index, 1);
+
+            updateEnergyUI();
+            return; // para no agarrar también tablet en el mismo frame
+        }
+
+        // 2. Revisar tabletas
+        const tablet = checkNearbyTablets();
+        if (tablet) {
+            playerStats.energy = Math.max(0, playerStats.energy - 20); // resta energía
+
+            scene.remove(tablet);
+            const index = tablets.indexOf(tablet);
+            if (index !== -1) tablets.splice(index, 1);
+
+            updateEnergyUI();
+        }
+      }
+});
+
 
 // Sistema de combate (copiado igual que en game.html)
 // ...existing code for battle system, event listeners, etc. copiado literalmente...
@@ -792,7 +946,3 @@ function stopBattleMusic() {
 		window.persistentMusic.audio.play();
 	}
 }
-
-// ...existing code for all game logic (movement, collision, battle, camera, animation loop, etc.) from game.html, adapted for level 2...
-
-// NOTA: Si necesitas que copie literalmente cada función y bloque, avísame para pegar el código completo aquí.

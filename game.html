@@ -85,6 +85,13 @@
         border-radius: 10px; color: #FDF0D5; font-size: 18px;">
       Presiona <strong>E</strong> para iniciar combate
     </div>
+
+    <!-- Interaccion con el cafe -->
+     <p id="objectPrompt" 
+      style="display:none; position:absolute; top:40%; left:50%; transform: translate(-50%, -50%); 
+              color:#FDF0D5; font-size:18px; background:#012a5fc4; padding:15px 30px; border-radius:10px;">
+      Presiona <strong>ESPACIO</strong> para tomar el objeto
+    </p>
   </div>
 
   <script src="js/sweetalert2.all.min.js"></script>
@@ -281,30 +288,7 @@
     }
     createBoundaryWalls();
 
-    // const planeGeometry = new THREE.PlaneGeometry(50, 50);
-    // const planeMaterial = new THREE.MeshStandardMaterial({ color: "slategrey" });
-    // const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-    // plane.rotateX(-Math.PI / 2);
-    // scene.add(plane);
-
-    // //STL
-    // const loaderSTL = new STLLoader();
-    // loaderSTL.load("scene/deadMouse.stl", function (geometry) {
-    //   const material = new THREE.MeshPhongMaterial({ color: "red" });
-    //   const mesh = new THREE.Mesh(geometry, material);
-    //   mesh.rotateX(-Math.PI / 2);
-    //   mesh.scale.set(0.03, 0.03, 0.03);
-    //   scene.add(mesh);
-    // });
-
-    // Antorcha
     const loaderGLB = new GLTFLoader();
-    // loaderGLB.load("assets/models/torch.glb", function (model) {
-    //   const obj = model.scene;
-    //   obj.scale.set(4, 4, 4);
-    //   obj.position.set(0, 0, 0);
-    //   scene.add(obj);
-    // });
 
     // Escenario (Scenario1)
     loaderGLB.load("assets/models/Scenario1.glb", function (model) {
@@ -352,21 +336,6 @@
       scene.add(collisionMesh);
       boundaryObjects.push(collisionMesh);
       
-      // Debug: mostrar caja amarilla del tamaño exacto del escenario
-    //   if (enableCollisionDebug) {
-    //     const boxMaterial = new THREE.MeshBasicMaterial({ 
-    //       color: 0xffff00,
-    //       wireframe: true,
-    //       transparent: true,
-    //       opacity: 0.5
-    //     });
-    //     const boxHelper = new THREE.Mesh(collisionGeometry.clone(), boxMaterial);
-    //     boxHelper.position.copy(scenarioCenter);
-    //     scene.add(boxHelper);
-    //     collisionHelpers.push(boxHelper);
-        
-    //     console.log(`🟨 Caja de colisión creada del tamaño del escenario completo`);
-    //   }
     });
     
     // Cargar modelo de colisiones internas (COLSC1)
@@ -577,19 +546,7 @@
       action.play();
     });
 
-    // Cargar personaje desde player.js
-    playerInstance = new Player(
-      scene,
-      scenarioBounds,
-      playerRadius,
-      acceleration,
-      maxSpeed,
-      deceleration,
-      rotationSpeed
-    );
-    playerInstance.loadPlayerModel();
-
-    // Owl Anim
+    // Owl Anim - Enemigo
     let mixer2;
     animScene.load("assets/models/day_20_-_snowy_owl.glb", function (model) {
       const obj = model.scene;
@@ -605,6 +562,96 @@
       const action2 = mixer2.clipAction(model.animations[0]);
       action2.play();
     });
+
+    // Cargar personaje desde player.js
+    playerInstance = new Player(
+      scene,
+      scenarioBounds,
+      playerRadius,
+      acceleration,
+      maxSpeed,
+      deceleration,
+      rotationSpeed
+    );
+    playerInstance.loadPlayerModel();
+
+
+    /* OBJETOS ESPECIALES */
+
+    function aplicarBrilloModelos(model) {
+      model.traverse((child) => {
+            if (child.isMesh) {
+                child.material.emissive = new THREE.Color("rgb(70%, 30%, 30%)");  // tono cálido
+                child.material.emissiveIntensity = 0.2;               // brillo (0–1)
+            }
+      });
+    }
+
+    const coffeeCount = Math.floor(Math.random() * 3) + 1;
+    const coffees = [];
+    for (let i = 0; i < coffeeCount; i++) {
+      loaderGLB.load("assets/models/coffee_cup.glb", function (model) {
+        const obj = model.scene;
+        aplicarBrilloModelos(obj);
+        obj.scale.set(0.15, 0.15, 0.15);
+
+        const randomX = Math.random() * 30 - 15;
+        const randomZ = Math.random() * 30 - 15;
+        const randomY = 0.8; // fijo
+
+        obj.position.set(randomX, randomY, randomZ);
+        obj.userData.type = "coffee";
+        obj.userData.baseY = obj.position.y;
+        obj.userData.floatOffset = Math.random() * Math.PI * 2;
+
+        coffees.push(obj);
+        scene.add(obj);
+      });
+    }
+
+    function checkNearbyCoffees() {
+      if (!playerInstance || !playerInstance.playerLoaded) return;
+
+      let closestCoffee = null;
+      let closestDist = 2; // distancia de interacción (cámbiala si quieres)
+
+      const playerObj = playerInstance.getObject();
+      if (!playerObj) return;
+
+      coffees.forEach(coffee => {
+          const dist = playerObj.position.distanceTo(coffee.position);
+          if (dist < closestDist) {
+              closestCoffee = coffee;
+              closestDist = dist;
+          }
+      });
+
+      // Mostrar o esconder aviso
+      const coffeePrompt = document.getElementById("objectPrompt");
+      if (closestCoffee) {
+          coffeePrompt.style.display = "block";
+      } else {
+          coffeePrompt.style.display = "none";
+      }
+
+      return closestCoffee;
+  }
+  document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {   // Barra espaciadora
+          const coffee = checkNearbyCoffees();
+          if (coffee) {
+              // Dar energía
+              playerStats.energy = Math.min(playerStats.maxEnergy, playerStats.energy + 15);
+
+              // Quitar café de la escena
+              scene.remove(coffee);
+              const index = coffees.indexOf(coffee);
+              if (index !== -1) coffees.splice(index, 1);
+
+              updateEnergyUI();
+          }
+      }
+  });
 
     // Controles de teclado
     window.addEventListener('keydown', (e) => {
@@ -1031,9 +1078,22 @@
         if (mixer) mixer.update(delta);
         if (mixer2) mixer2.update(delta);
         if (playerInstance && playerInstance.playerLoaded) playerInstance.updateMixer(delta);
+
+        //Objetos especiales
+        scene.traverse(obj => {
+            if (obj.userData.type === "coffee") {
+                obj.rotation.y += 0.003;
+                const amplitude = 0.15;    // cuánto sube/baja
+                const speed = 1.5;         // qué tan rápido flota
+                const elapsed = clock.getElapsedTime();
+                obj.position.y = obj.userData.baseY 
+                              + Math.sin(elapsed * speed + obj.userData.floatOffset) * amplitude;
+            }
+        });
         updatePlayerMovement();
         updateAggressiveEnemies();
         checkNearbyEnemies();
+        checkNearbyCoffees();
         updateCamera();
       }
       renderer.render(scene, camera);

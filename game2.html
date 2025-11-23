@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Nivel 2 - Universia</title>
+  <link rel="stylesheet" href="css/sweet-alert.css">
   <link rel="stylesheet" href="css/game.css">
 </head>
 <body>
@@ -77,6 +78,14 @@
         border-radius: 10px; color: #FDF0D5; font-size: 18px;">
       Presiona <strong>E</strong> para iniciar combate
     </div>
+
+    <!-- Indicador de objetos especiales -->
+    <p id="objectPrompt"
+      style="display:none; position:absolute; top:30%; left:50%; transform: translate(-50%, -50%); 
+              color:#FDF0D5; font-size:18px; background:#012a5fc4; padding:15px 30px; border-radius:10px;">
+      Presiona <strong>ESPACIO</strong> para tomar el objeto
+    </p>
+
   </div>
   <script src="js/sweetalert2.all.min.js"></script>
   <script src="js/pause-menu"></script>

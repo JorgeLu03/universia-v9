@@ -144,7 +144,6 @@ export function setupBattleSystem({
             const enemyStats = getEnemyStats();
             const playerStats = getPlayerStats();
             if (won) {
-                alert(`¡Ganaste! Has derrotado a ${enemyStats.name}`);
                 if (currentBattleEnemy) {
                     scene.remove(currentBattleEnemy);
                     const index = enemies.indexOf(currentBattleEnemy);
@@ -157,7 +156,6 @@ export function setupBattleSystem({
                     }
                 }
             } else {
-                alert(`Has perdido el combate...`);
             }
             document.getElementById('battleUI').style.display = 'none';
             setInBattle(false);
