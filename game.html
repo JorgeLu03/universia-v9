@@ -30,6 +30,13 @@
     </div>
     <div class="informacion"></div>
 
+    <div id="EnergyUI">
+      <div style="background: #333; height: 20px; border-radius: 5px; overflow: hidden;">
+          <div id="playerEnergy" style="background: #FFB30F; height: 100%; width: 100%; transition: width 0.3s;"></div>
+        </div>
+        <p id="playerEnergyText" style="margin: 5px 0 0 0; font-size: 14px;">Energia: 100/100</p>
+    </div>
+
     <div id="escena3D"></div>
     
     <!-- UI de Combate -->
@@ -133,6 +140,7 @@
       console.log(currentUser.displayName);
     });
 
+    const dificultad = localStorage.getItem("dificultad") || "normal";
     const contenedor = document.getElementById("escena3D");
 
     const scene = new THREE.Scene();
@@ -189,13 +197,24 @@
       maxEnergy: 100
     };
     
-    let enemyStats = {
-      name: "Enemigo",
-      hp: 100,
-      maxHp: 100,
-      attack: 15,
-      defense: 8
-    };
+    if(dificultad === "normal"){
+      let enemyStats = {
+        name: "Enemigo",
+        hp: 100,
+        maxHp: 100,
+        attack: 15,
+        defense: 8
+      };
+    }else{
+      let enemyStats = {
+        name: "Enemigo",
+        hp: 100,
+        maxHp: 100,
+        attack: 22,
+        defense: 10
+      };
+    }
+
     
     let isPlayerTurn = true;
     let level1ScoreSaved = false;

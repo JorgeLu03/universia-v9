@@ -51,6 +51,7 @@ import { awardScoreForLevel } from "./score-service.js";
 
 let currentUser = null;
 
+const dificultad = localStorage.getItem("dificultad") || "normal";
 const contenedor = document.getElementById("escena3D");
 const scene = new THREE.Scene();
 scene.background = new THREE.Color("#34495E");
@@ -110,14 +111,23 @@ onAuthStateChanged(auth, (user) => {
     playerStats.name = currentUser.displayName;
 });
 
-
-let enemyStats = {
-	name: "Enemigo",
-	hp: 100,
-	maxHp: 100,
-	attack: 15,
-	defense: 8
-};
+if(dificultad === "normal"){
+      let enemyStats = {
+        name: "Enemigo",
+        hp: 100,
+        maxHp: 100,
+        attack: 15,
+        defense: 8
+      };
+    }else{
+      let enemyStats = {
+        name: "Enemigo",
+        hp: 100,
+        maxHp: 100,
+        attack: 22,
+        defense: 10
+      };
+}
 
 let isPlayerTurn = true;
 let level3ScoreSaved = false;
