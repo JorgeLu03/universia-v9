@@ -1,3 +1,6 @@
+import { auth } from '../js/firebase-config.js';
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
 // --- LÓGICA DE BATALLA Y ATAQUE ---
 
 function startBattle(enemy) {
@@ -10,7 +13,6 @@ function startBattle(enemy) {
 	enemyStats.maxHp = 100;
 	enemyStats.attack = 15;
 	enemyStats.defense = 8;
-	// Puedes personalizar stats por tipo de enemigo aquí si lo deseas
 	// Oculta el texto de interacción si está visible
 	const interactPrompt = document.getElementById('interactPrompt');
 	if (interactPrompt) interactPrompt.style.display = 'none';
@@ -47,64 +49,7 @@ import { RGBELoader } from "../assets/Light/RGBELoader.js";
 import { Player } from "./player.js";
 import { awardScoreForLevel } from "./score-service.js";
 
-const pauseOverlay = document.getElementById('pauseOverlay');
-const pauseButton = document.getElementById('pause');
-const resumeBtn = document.getElementById('resumeBtn');
-const settingsBtn = document.getElementById('settingsBtn');
-const exitBtn = document.getElementById('exitBtn');
-const settingsOverlay = document.getElementById('settingsOverlay');
-const closeSettingsBtn = document.getElementById('closeSettingsBtn');
-const overlayVolume = document.getElementById('overlayVolume');
-let isGamePaused = false;
-
-function showPause() {
-	isGamePaused = true;
-	if (pauseOverlay) pauseOverlay.style.display = 'flex';
-}
-
-function hidePause(resumeGame = true) {
-	if (resumeGame) {
-		isGamePaused = false;
-	}
-	if (pauseOverlay) pauseOverlay.style.display = 'none';
-}
-
-function syncOverlayVolume() {
-	if (!overlayVolume) return;
-	const current = window.persistentMusic?.volume ?? parseFloat(localStorage.getItem('universiaVolume') ?? '0.8');
-	overlayVolume.value = Math.round((Number.isFinite(current) ? current : 0.8) * 100);
-}
-
-function showSettingsPanel() {
-	isGamePaused = true;
-	if (pauseOverlay) pauseOverlay.style.display = 'none';
-	if (settingsOverlay) {
-		syncOverlayVolume();
-		settingsOverlay.style.display = 'flex';
-	}
-}
-
-function hideSettingsPanel() {
-	if (settingsOverlay) settingsOverlay.style.display = 'none';
-}
-
-pauseButton?.addEventListener('click', showPause);
-resumeBtn?.addEventListener('click', () => hidePause(true));
-settingsBtn?.addEventListener('click', showSettingsPanel);
-closeSettingsBtn?.addEventListener('click', () => {
-	hideSettingsPanel();
-	showPause();
-});
-exitBtn?.addEventListener('click', () => {
-	window.location.href = 'main.html';
-});
-
-overlayVolume?.addEventListener('input', (event) => {
-	const value = Number(event.target.value);
-	const normalized = Math.min(Math.max(value / 100, 0), 1);
-	const volumeChange = new CustomEvent('universia-volume-change', { detail: normalized });
-	window.dispatchEvent(volumeChange);
-});
+let currentUser = null;
 
 const contenedor = document.getElementById("escena3D");
 const scene = new THREE.Scene();
@@ -155,8 +100,16 @@ let playerStats = {
 	hp: 100,
 	maxHp: 100,
 	attack: 20,
-	defense: 10
+	defense: 10,
+    energy: 100,
+    maxEnergy: 100
 };
+
+onAuthStateChanged(auth, (user) => {
+    currentUser = user;
+    playerStats.name = currentUser.displayName;
+});
+
 
 let enemyStats = {
 	name: "Enemigo",
@@ -535,57 +488,18 @@ if (!document.getElementById('pause')) {
 	document.body.appendChild(pauseBtn);
 }
 
-// --- UI DE BATALLA (si no existe) ---
-if (!document.getElementById('battleUI')) {
-	const battleUI = document.createElement('div');
-	battleUI.id = 'battleUI';
-	battleUI.style.display = 'none';
-	battleUI.style.position = 'absolute';
-	battleUI.style.bottom = '20px';
-	battleUI.style.left = '50%';
-	battleUI.style.transform = 'translateX(-50%)';
-	battleUI.style.background = 'rgba(0,0,0,0.8)';
-	battleUI.style.padding = '20px';
-	battleUI.style.borderRadius = '10px';
-	battleUI.style.color = 'white';
-	battleUI.style.width = '600px';
-	battleUI.innerHTML = `
-		<div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
-			<div style="flex: 1; margin-right: 10px;">
-				<h3 id="playerName" style="margin: 0 0 5px 0;">Unicornio</h3>
-				<div style="background: #333; height: 20px; border-radius: 5px; overflow: hidden;">
-					<div id="playerHP" style="background: #4CAF50; height: 100%; width: 100%; transition: width 0.3s;"></div>
-				</div>
-				<p id="playerHPText" style="margin: 5px 0 0 0; font-size: 14px;">HP: 100/100</p>
-			</div>
-			<div style="flex: 1; margin-left: 10px;">
-				<h3 id="enemyName" style="margin: 0 0 5px 0;">Enemigo</h3>
-				<div style="background: #333; height: 20px; border-radius: 5px; overflow: hidden;">
-					<div id="enemyHP" style="background: #f44336; height: 100%; width: 100%; transition: width 0.3s;"></div>
-				</div>
-				<p id="enemyHPText" style="margin: 5px 0 0 0; font-size: 14px;">HP: 100/100</p>
-			</div>
-		</div>
-		<div id="battleMessage" style="background: #222; padding: 10px; border-radius: 5px; margin-bottom: 15px; min-height: 40px;">
-			<p style="margin: 0;">Presiona ATACAR para comenzar el combate</p>
-		</div>
-		<div id="battleActions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-			<button id="attackBtn" style="padding: 15px; font-size: 16px; cursor: pointer; background: #2196F3; color: white; border: none; border-radius: 5px;">ATACAR</button>
-			<button id="specialBtn" style="padding: 15px; font-size: 16px; cursor: pointer; background: #FF9800; color: white; border: none; border-radius: 5px;">ATAQUE ESPECIAL</button>
-			<button id="defendBtn" style="padding: 15px; font-size: 16px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 5px;">DEFENDER</button>
-			<button id="runBtn" style="padding: 15px; font-size: 16px; cursor: pointer; background: #f44336; color: white; border: none; border-radius: 5px;">HUIR</button>
-		</div>
-	`;
-	document.body.appendChild(battleUI);
-}
-
 // --- LÓGICA DE BATALLA Y ATAQUE ---
 function updateBattleUI() {
 	const playerHPPercent = (playerStats.hp / playerStats.maxHp) * 100;
+	const playerEnergyPercent = (playerStats.energy / playerStats.maxEnergy) * 100;
 	const enemyHPPercent = (enemyStats.hp / enemyStats.maxHp) * 100;
+
 	document.getElementById('playerHP').style.width = playerHPPercent + '%';
+	document.getElementById('playerEnergy').style.width = playerEnergyPercent + '%';
 	document.getElementById('enemyHP').style.width = enemyHPPercent + '%';
+
 	document.getElementById('playerHPText').textContent = `HP: ${Math.max(0, playerStats.hp)}/${playerStats.maxHp}`;
+	document.getElementById('playerEnergyText').textContent = `Energia: ${Math.max(0, playerStats.energy)}/${playerStats.maxEnergy}`;
 	document.getElementById('enemyHPText').textContent = `HP: ${Math.max(0, enemyStats.hp)}/${enemyStats.maxHp}`;
 }
 function showMessage(message) {
@@ -593,10 +507,18 @@ function showMessage(message) {
 }
 function playerAttack() {
 	if (!isPlayerTurn) return;
+	if(playerStats.energy <=3){
+        showMessage('No tienes energia suficiente para atacar!');
+        return;
+    }
 	playAttackSound();
 	const damage = Math.max(5, playerStats.attack - enemyStats.defense + Math.floor(Math.random() * 10));
 	enemyStats.hp -= damage;
 	showMessage(`${playerStats.name} atacó e hizo ${damage} de daño!`);
+
+	const energyCost = 3 + Math.floor(Math.random() * 4);
+    playerStats.energy = Math.max(0, playerStats.energy - energyCost);
+	
 	updateBattleUI();
 	if (enemyStats.hp <= 0) {
 		endBattle(true);
@@ -607,9 +529,17 @@ function playerAttack() {
 }
 function playerSpecialAttack() {
 	if (!isPlayerTurn) return;
+	if(playerStats.energy <=8){
+        showMessage('No tienes energia suficiente para un ataque especial!');
+        return;
+      }
 	playAttackSound();
 	const damage = Math.max(10, playerStats.attack * 1.5 - enemyStats.defense + Math.floor(Math.random() * 15));
 	enemyStats.hp -= damage;
+
+	const energyCost = 8 + Math.floor(Math.random() * 8);
+    playerStats.energy = Math.max(0, playerStats.energy - energyCost);  
+	
 	showMessage(`¡${playerStats.name} usó Ataque Especial e hizo ${damage} de daño!`);
 	updateBattleUI();
 	if (enemyStats.hp <= 0) {
@@ -671,7 +601,14 @@ async function persistLevelThreeScore() {
 function endBattle(won) {
 	setTimeout(() => {
 		if (won) {
-			alert(`¡Ganaste! Has derrotado a ${enemyStats.name}`);
+				Swal.fire({
+				title: "¡Ganaste!",
+				text: "Has derrotado a " + enemyStats.name,
+				imageUrl: "./assets/images/win-icon.png",
+				imageWidth: 100,
+				imageHeight: 100,
+				confirmButtonText: "¡Genial!"
+			});
 			persistLevelThreeScore();
 			if (currentBattleEnemy) {
 				scene.remove(currentBattleEnemy);
@@ -683,9 +620,28 @@ function endBattle(won) {
 					nearbyEnemy = null;
 					document.getElementById('interactPrompt').style.display = 'none';
 				}
+				if (enemies.length === 0) {
+					Swal.fire({
+					title: "¡Nivel completado!",
+					text: "Has derrotado a todos los enemigos",
+					imageUrl: "./assets/images/level-complete.png",
+					imageWidth: 120,
+					imageHeight: 120,
+					confirmButtonText: "Volver al inicio"
+					}).then(() => {
+					window.location.href = "main.html";
+					});
+				}
 			}
 		} else {
-			alert(`Has perdido el combate...`);
+			Swal.fire({
+            title: "¡Oh no!",
+            text: "Has perdido el combate",
+            imageUrl: "./assets/images/lose-icon.png",
+            imageWidth: 100,
+            imageHeight: 100,
+            confirmButtonText: "Entendido"
+          });
 		}
 		document.getElementById('battleUI').style.display = 'none';
 		inBattle = false;

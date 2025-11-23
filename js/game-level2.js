@@ -1,3 +1,6 @@
+import { auth } from '../js/firebase-config.js';
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
 import * as THREE from "../scene/three.module.js";
 import { OrbitControls } from "../scene/OrbitControls.js";
 import { STLLoader } from "../scene/STLLoader.js";
@@ -7,64 +10,7 @@ import { Player } from "./player.js";
 import { setupBattleSystem } from "./battle.js";
 import { awardScoreForLevel } from "./score-service.js";
 
-const pauseOverlay = document.getElementById('pauseOverlay');
-const pauseButton = document.getElementById('pause');
-const resumeBtn = document.getElementById('resumeBtn');
-const settingsBtn = document.getElementById('settingsBtn');
-const exitBtn = document.getElementById('exitBtn');
-const settingsOverlay = document.getElementById('settingsOverlay');
-const closeSettingsBtn = document.getElementById('closeSettingsBtn');
-const overlayVolume = document.getElementById('overlayVolume');
-let isGamePaused = false;
-
-function showPause() {
-	isGamePaused = true;
-	if (pauseOverlay) pauseOverlay.style.display = 'flex';
-}
-
-function hidePause(resumeGame = true) {
-	if (resumeGame) {
-		isGamePaused = false;
-	}
-	if (pauseOverlay) pauseOverlay.style.display = 'none';
-}
-
-function syncOverlayVolume() {
-	if (!overlayVolume) return;
-	const current = window.persistentMusic?.volume ?? parseFloat(localStorage.getItem('universiaVolume') ?? '0.8');
-	overlayVolume.value = Math.round((Number.isFinite(current) ? current : 0.8) * 100);
-}
-
-function showSettingsPanel() {
-	isGamePaused = true;
-	if (pauseOverlay) pauseOverlay.style.display = 'none';
-	if (settingsOverlay) {
-		syncOverlayVolume();
-		settingsOverlay.style.display = 'flex';
-	}
-}
-
-function hideSettingsPanel() {
-	if (settingsOverlay) settingsOverlay.style.display = 'none';
-}
-
-pauseButton?.addEventListener('click', showPause);
-resumeBtn?.addEventListener('click', () => hidePause(true));
-settingsBtn?.addEventListener('click', showSettingsPanel);
-closeSettingsBtn?.addEventListener('click', () => {
-	hideSettingsPanel();
-	showPause();
-});
-exitBtn?.addEventListener('click', () => {
-	window.location.href = 'main.html';
-});
-
-overlayVolume?.addEventListener('input', (event) => {
-	const value = Number(event.target.value);
-	const normalized = Math.min(Math.max(value / 100, 0), 1);
-	const volumeChange = new CustomEvent('universia-volume-change', { detail: normalized });
-	window.dispatchEvent(volumeChange);
-});
+let currentUser = null;
 
 const contenedor = document.getElementById("escena3D");
 const scene = new THREE.Scene();
@@ -117,8 +63,15 @@ let playerStats = {
 	hp: 100,
 	maxHp: 100,
 	attack: 20,
-	defense: 10
+	defense: 10,
+    energy: 100,
+    maxEnergy: 100
 };
+
+onAuthStateChanged(auth, (user) => {
+    currentUser = user;
+    playerStats.name = currentUser.displayName;
+});
 
 let enemyStats = {
 	name: "Enemigo",
@@ -625,21 +578,36 @@ animate();
 // (startBattle ahora es provisto por battle.js)
 function updateBattleUI() {
 	const playerHPPercent = (playerStats.hp / playerStats.maxHp) * 100;
+	const playerEnergyPercent = (playerStats.energy / playerStats.maxEnergy) * 100;
 	const enemyHPPercent = (enemyStats.hp / enemyStats.maxHp) * 100;
+
 	document.getElementById('playerHP').style.width = playerHPPercent + '%';
+	document.getElementById('playerEnergy').style.width = playerEnergyPercent + '%';
 	document.getElementById('enemyHP').style.width = enemyHPPercent + '%';
+
 	document.getElementById('playerHPText').textContent = `HP: ${Math.max(0, playerStats.hp)}/${playerStats.maxHp}`;
+	document.getElementById('playerEnergyText').textContent = `Energia: ${Math.max(0, playerStats.energy)}/${playerStats.maxEnergy}`;
 	document.getElementById('enemyHPText').textContent = `HP: ${Math.max(0, enemyStats.hp)}/${enemyStats.maxHp}`;
 }
+
 function showMessage(message) {
 	document.getElementById('battleMessage').innerHTML = `<p style="margin: 0;">${message}</p>`;
 }
+
 function playerAttack() {
 	if (!isPlayerTurn) return;
+	if(playerStats.energy <=3){
+        showMessage('No tienes energia suficiente para atacar!');
+        return;
+      }
 	playAttackSound();
 	const damage = Math.max(5, playerStats.attack - enemyStats.defense + Math.floor(Math.random() * 10));
 	enemyStats.hp -= damage;
 	showMessage(`${playerStats.name} atacó e hizo ${damage} de daño!`);
+
+	const energyCost = 3 + Math.floor(Math.random() * 4);
+    playerStats.energy = Math.max(0, playerStats.energy - energyCost);
+	
 	updateBattleUI();
 	if (enemyStats.hp <= 0) {
 		endBattle(true);
@@ -650,9 +618,17 @@ function playerAttack() {
 }
 function playerSpecialAttack() {
 	if (!isPlayerTurn) return;
+	if(playerStats.energy <=8){
+        showMessage('No tienes energia suficiente para un ataque especial!');
+        return;
+      }
 	playAttackSound();
 	const damage = Math.max(10, playerStats.attack * 1.5 - enemyStats.defense + Math.floor(Math.random() * 15));
 	enemyStats.hp -= damage;
+
+	const energyCost = 8 + Math.floor(Math.random() * 8);
+    playerStats.energy = Math.max(0, playerStats.energy - energyCost);  
+	
 	showMessage(`¡${playerStats.name} usó Ataque Especial e hizo ${damage} de daño!`);
 	updateBattleUI();
 	if (enemyStats.hp <= 0) {
@@ -715,7 +691,14 @@ function endBattle(won) {
 	setTimeout(() => {
 		stopBattleMusic();
 		if (won) {
-			alert(`¡Ganaste! Has derrotado a ${enemyStats.name}`);
+			Swal.fire({
+            title: "¡Ganaste!",
+            text: "Has derrotado a " + enemyStats.name,
+            imageUrl: "./assets/images/win-icon.png",
+            imageWidth: 100,
+            imageHeight: 100,
+            confirmButtonText: "¡Genial!"
+          });
 			persistLevelTwoScore();
 			if (currentBattleEnemy) {
 				scene.remove(currentBattleEnemy);
@@ -727,9 +710,28 @@ function endBattle(won) {
 					nearbyEnemy = null;
 					document.getElementById('interactPrompt').style.display = 'none';
 				}
-			}
+				if (enemies.length === 0) {
+					Swal.fire({
+					title: "¡Nivel completado!",
+					text: "Has derrotado a todos los enemigos",
+					imageUrl: "./assets/level-complete/win-icon.png",
+					imageWidth: 120,
+					imageHeight: 120,
+					confirmButtonText: "Volver al inicio"
+					}).then(() => {
+					window.location.href = "main.html";
+					});
+				}
+			}	
 		} else {
-			alert(`Has perdido el combate...`);
+			Swal.fire({
+            title: "¡Oh no!",
+            text: "Has perdido el combate",
+            imageUrl: "./assets/images/lose-icon.png",
+            imageWidth: 100,
+            imageHeight: 100,
+            confirmButtonText: "Entendido"
+          });
 		}
 		document.getElementById('battleUI').style.display = 'none';
 		inBattle = false;
