@@ -53,6 +53,8 @@ let currentUser = null;
 
 const dificultad = localStorage.getItem("dificultad") || "normal";
 const contenedor = document.getElementById("escena3D");
+
+const EnergyUI = document.getElementById("EnergyUI");
 const scene = new THREE.Scene();
 scene.background = new THREE.Color("#34495E");
 
@@ -256,6 +258,7 @@ window.addEventListener('keydown', (e) => {
 	if (key === 'd' || key === 'arrowright') playerController.setKey('d', true);
 	if (key === 'e') {
 		if (nearbyEnemy && !inBattle) {
+			EnergyUI.style.display = "none";
 			startBattle(nearbyEnemy);
 		}
 	}
@@ -515,6 +518,13 @@ function updateBattleUI() {
 function showMessage(message) {
 	document.getElementById('battleMessage').innerHTML = `<p style="margin: 0;">${message}</p>`;
 }
+
+function updateEnergyUI(){
+    const playerEnergyPercent = (playerStats.energy / playerStats.maxEnergy) * 100;
+    document.getElementById('playerEnergyUI').style.width = playerEnergyPercent + '%';
+    document.getElementById('playerEnergyTextUI').textContent = `Energia: ${Math.max(0, playerStats.energy)}/${playerStats.maxEnergy}`;
+}
+
 function playerAttack() {
 	if (!isPlayerTurn) return;
 	if(playerStats.energy <=3){
@@ -654,6 +664,8 @@ function endBattle(won) {
           });
 		}
 		document.getElementById('battleUI').style.display = 'none';
+		EnergyUI.style.display = "block";
+        updateEnergyUI();
 		inBattle = false;
 		currentBattleEnemy = null;
 		// Detiene el audio de combate si existe

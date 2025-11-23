@@ -15,6 +15,7 @@ let currentUser = null;
 const dificultad = localStorage.getItem("dificultad") || "normal";
 const contenedor = document.getElementById("escena3D");
 
+const EnergyUI = document.getElementById("EnergyUI");
 const scene = new THREE.Scene();
 scene.background = new THREE.Color("#34495E");
 
@@ -530,6 +531,7 @@ function updateAggressiveEnemies() {
 			} else if (distance <= attackRange) {
 				if (!inBattle) {
 					console.log('[DEBUG][N2] ¡Distancia de combate alcanzada! Llamando a startBattle');
+					EnergyUI.style.display = "none";
 					battle.startBattle(enemy);
 				}
 				enemy.userData.isChasing = false;
@@ -602,8 +604,15 @@ function updateBattleUI() {
 	document.getElementById('enemyHPText').textContent = `HP: ${Math.max(0, enemyStats.hp)}/${enemyStats.maxHp}`;
 }
 
+
 function showMessage(message) {
 	document.getElementById('battleMessage').innerHTML = `<p style="margin: 0;">${message}</p>`;
+}
+
+function updateEnergyUI(){
+    const playerEnergyPercent = (playerStats.energy / playerStats.maxEnergy) * 100;
+    document.getElementById('playerEnergyUI').style.width = playerEnergyPercent + '%';
+    document.getElementById('playerEnergyTextUI').textContent = `Energia: ${Math.max(0, playerStats.energy)}/${playerStats.maxEnergy}`;
 }
 
 function playerAttack() {
@@ -746,6 +755,8 @@ function endBattle(won) {
           });
 		}
 		document.getElementById('battleUI').style.display = 'none';
+		EnergyUI.style.display = "block";
+        updateEnergyUI();
 		inBattle = false;
 		currentBattleEnemy = null;
 	}, 1500);
