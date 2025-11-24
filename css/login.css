@@ -84,3 +84,92 @@ p{
 a{
     color: #849324;
 }
+
+.divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 20px 0;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #01295F;
+}
+
+.divider span {
+    padding: 0 10px;
+    font-size: 120%;
+    color: #01295F;
+}
+
+/* Estilos específicos para el botón de Google */
+#btn-google {
+    background: #4285f4 !important;
+    color: white !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    padding: 10px 20px !important;
+    border: 2px solid #4285f4 !important;
+    border-radius: 8px !important;
+    font-size: 16px !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    border-image: none !important;
+}
+
+#btn-google:hover {
+    background: #357ae8 !important;
+    border-color: #357ae8 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+}
+
+#btn-google:disabled {
+    background: #cccccc !important;
+    border-color: #cccccc !important;
+    color: #666666 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Estilos para el indicador de estado de Google */
+#google-login-status {
+    font-size: 14px;
+    border-radius: 8px;
+    border: 1px solid;
+    text-align: center;
+    margin-top: 15px;
+    padding: 10px;
+    font-family: PixelifySans-SemiBold;
+}
+
+#google-login-status.success {
+    background: #d4edda;
+    color: #155724;
+    border-color: #c3e6cb;
+}
+
+#google-login-status.error {
+    background: #f8d7da;
+    color: #721c24;
+    border-color: #f5c6cb;
+}
+
+#google-login-status.info {
+    background: #d1ecf1;
+    color: #0c5460;
+    border-color: #bee5eb;
+}
+
+/* Mejorar el botón de login normal */
+#btn-login:disabled {
+    background-color: #666666 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+}

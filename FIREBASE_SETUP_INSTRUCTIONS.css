@@ -1,0 +1,47 @@
+/* Instrucciones para configurar Firebase Realtime Database */
+
+/*
+IMPORTANTE: PASOS PARA CONFIGURAR FIREBASE REALTIME DATABASE
+
+1. Ve a la consola de Firebase: https://console.firebase.google.com/
+2. Selecciona tu proyecto existente: gcweb-e1ac1
+3. En el menú lateral, busca "Realtime Database" 
+4. Haz clic en "Crear base de datos"
+5. Selecciona "Empezar en modo de prueba" (para desarrollo)
+6. Elige una ubicación (se recomienda us-central1 para mejor rendimiento)
+7. Una vez creada, verifica que la URL sea: https://gcweb-e1ac1-default-rtdb.firebaseio.com/
+
+REGLAS DE SEGURIDAD PARA DESARROLLO (configurar en la consola):
+{
+  "rules": {
+    ".read": "auth != null",
+    ".write": "auth != null"
+  }
+}
+
+Estas reglas permiten que solo usuarios autenticados puedan leer/escribir datos.
+
+REGLAS MÁS ESPECÍFICAS PARA EL JUEGO:
+{
+  "rules": {
+    "game_sessions": {
+      "$roomId": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        "players": {
+          "$userId": {
+            ".write": "$userId == auth.uid",
+            ".validate": "newData.hasChildren(['playerId', 'playerName', 'x', 'y', 'z'])"
+          }
+        },
+        "chat": {
+          ".write": "auth != null",
+          "$messageId": {
+            ".validate": "newData.hasChildren(['playerId', 'playerName', 'message', 'timestamp'])"
+          }
+        }
+      }
+    }
+  }
+}
+*/

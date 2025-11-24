@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Universia - Salas Multijugador</title>
+  <link rel="stylesheet" href="css/game.css">
+  <style>
+    .room-selector {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #01295F, #003d7a);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .room-container {
+      background: rgba(253, 240, 213, 0.95);
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      max-width: 600px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .room-container h2 {
+      color: #01295F;
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 2em;
+    }
+
+    .room-actions {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+      justify-content: center;
+    }
+
+    .room-btn {
+      background: #01295F;
+      color: #FDF0D5;
+      border: none;
+      padding: 12px 25px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.3s;
+    }
+
+    .room-btn:hover {
+      background: #FFB30F;
+      color: #01295F;
+      transform: translateY(-2px);
+    }
+
+    .room-btn:disabled {
+      background: #666;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .room-input-group {
+      margin-bottom: 15px;
+      text-align: center;
+    }
+
+    .room-input-group input {
+      padding: 10px;
+      border: 2px solid #01295F;
+      border-radius: 5px;
+      width: 200px;
+      text-align: center;
+      font-size: 16px;
+      text-transform: uppercase;
+    }
+
+    .room-list {
+      margin-top: 20px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .room-item {
+      background: rgba(1, 41, 95, 0.1);
+      border: 2px solid #01295F;
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.3s;
+    }
+
+    .room-item:hover {
+      background: rgba(255, 179, 15, 0.2);
+      transform: translateX(5px);
+    }
+
+    .room-info h4 {
+      color: #01295F;
+      margin: 0 0 5px 0;
+      font-size: 1.2em;
+    }
+
+    .room-info p {
+      color: #666;
+      margin: 0;
+      font-size: 0.9em;
+    }
+
+    .room-players {
+      background: #FFB30F;
+      color: #01295F;
+      padding: 5px 10px;
+      border-radius: 15px;
+      font-weight: bold;
+      margin-right: 10px;
+    }
+
+    .join-room-btn {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .join-room-btn:hover {
+      background: #45a049;
+    }
+
+    .no-rooms {
+      text-align: center;
+      color: #666;
+      font-style: italic;
+      padding: 20px;
+    }
+
+    .loading {
+      text-align: center;
+      color: #01295F;
+      font-size: 1.1em;
+    }
+
+    .error-message {
+      background: #ffebee;
+      color: #c62828;
+      padding: 10px;
+      border-radius: 5px;
+      margin: 10px 0;
+      text-align: center;
+    }
+
+    .success-message {
+      background: #e8f5e8;
+      color: #2e7d32;
+      padding: 10px;
+      border-radius: 5px;
+      margin: 10px 0;
+      text-align: center;
+    }
+
+    .back-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: #FD151B;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .back-btn:hover {
+      background: #d41317;
+    }
+  </style>
+</head>
+<body>
+  <button class="back-btn" onclick="goBack()">← Volver</button>
+  
+  <div class="room-selector" id="roomSelector">
+    <div class="room-container">
+      <h2>Salas Multijugador</h2>
+      
+      <div id="messageArea"></div>
+      
+      <div class="room-actions">
+        <button class="room-btn" id="createRoomBtn">Crear Sala</button>
+        <button class="room-btn" id="refreshRoomsBtn">Actualizar</button>
+      </div>
+      
+      <div class="room-input-group" id="joinRoomGroup" style="display: none;">
+        <input type="text" id="roomIdInput" placeholder="CÓDIGO DE SALA" maxlength="8">
+        <br><br>
+        <button class="room-btn" id="joinByCodeBtn">Unirse por Código</button>
+        <button class="room-btn" id="cancelJoinBtn">Cancelar</button>
+      </div>
+      
+      <div class="room-input-group">
+        <button class="room-btn" id="joinByCodeToggleBtn">Unirse por Código</button>
+      </div>
+      
+      <div id="roomsList">
+        <div class="loading">Cargando salas disponibles...</div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { auth } from './js/firebase-config.js';
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { RoomManager } from './js/room-manager.js';
+
+    let currentUser = null;
+    let roomManager = null;
+    
+    const messageArea = document.getElementById('messageArea');
+    const createRoomBtn = document.getElementById('createRoomBtn');
+    const refreshRoomsBtn = document.getElementById('refreshRoomsBtn');
+    const joinByCodeToggleBtn = document.getElementById('joinByCodeToggleBtn');
+    const joinRoomGroup = document.getElementById('joinRoomGroup');
+    const roomIdInput = document.getElementById('roomIdInput');
+    const joinByCodeBtn = document.getElementById('joinByCodeBtn');
+    const cancelJoinBtn = document.getElementById('cancelJoinBtn');
+    const roomsList = document.getElementById('roomsList');
+
+    // Verificar autenticación
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        currentUser = user;
+        roomManager = new RoomManager();
+        initializeRoomSelector();
+        
+        // Limpiar salas vacías cada 30 segundos
+        setInterval(() => {
+          roomManager.cleanupRooms();
+        }, 30000);
+        
+        // Limpiar al salir de la página
+        window.addEventListener('beforeunload', () => {
+          if (roomManager) {
+            roomManager.cleanupRooms();
+          }
+        });
+        
+      } else {
+        window.location.href = 'login.html';
+      }
+    });
+
+    function showMessage(message, type = 'error') {
+      messageArea.innerHTML = `<div class="${type}-message">${message}</div>`;
+      setTimeout(() => {
+        messageArea.innerHTML = '';
+      }, 5000);
+    }
+
+    function initializeRoomSelector() {
+      // Crear sala
+      createRoomBtn.addEventListener('click', async () => {
+        try {
+          createRoomBtn.disabled = true;
+          createRoomBtn.textContent = 'Creando...';
+          
+          const roomId = await roomManager.createRoom(currentUser);
+          showMessage('¡Sala creada exitosamente!', 'success');
+          
+          setTimeout(() => {
+            window.location.href = `multiplayer.html?room=${roomId}`;
+          }, 1500);
+          
+        } catch (error) {
+          showMessage(`Error al crear la sala: ${error.message}`);
+          createRoomBtn.disabled = false;
+          createRoomBtn.textContent = 'Crear Sala';
+        }
+      });
+
+      // Actualizar lista de salas
+      refreshRoomsBtn.addEventListener('click', () => {
+        loadAvailableRooms();
+      });
+
+      // Toggle unirse por código
+      joinByCodeToggleBtn.addEventListener('click', () => {
+        joinRoomGroup.style.display = joinRoomGroup.style.display === 'none' ? 'block' : 'none';
+        roomIdInput.focus();
+      });
+
+      // Unirse por código
+      joinByCodeBtn.addEventListener('click', async () => {
+        const roomId = roomIdInput.value.trim().toUpperCase();
+        if (!roomId) {
+          showMessage('Por favor ingresa un código de sala');
+          return;
+        }
+        
+        try {
+          joinByCodeBtn.disabled = true;
+          joinByCodeBtn.textContent = 'Uniéndose...';
+          
+          await roomManager.joinRoom(roomId, currentUser);
+          showMessage('¡Unido a la sala exitosamente!', 'success');
+          
+          setTimeout(() => {
+            window.location.href = `multiplayer.html?room=${roomId}`;
+          }, 1500);
+          
+        } catch (error) {
+          showMessage(`Error: ${error.message}`);
+          joinByCodeBtn.disabled = false;
+          joinByCodeBtn.textContent = 'Unirse por Código';
+        }
+      });
+
+      // Cancelar unirse por código
+      cancelJoinBtn.addEventListener('click', () => {
+        joinRoomGroup.style.display = 'none';
+        roomIdInput.value = '';
+      });
+
+      // Enter en input de código
+      roomIdInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          joinByCodeBtn.click();
+        }
+      });
+
+      // Cargar salas disponibles
+      loadAvailableRooms();
+    }
+
+    function loadAvailableRooms() {
+      roomsList.innerHTML = '<div class="loading">Cargando salas disponibles...</div>';
+      
+      // Configurar listener para actualizaciones en tiempo real
+      roomManager.onRoomsUpdate((snapshot) => {
+        const roomsData = snapshot.val();
+        if (roomsData) {
+          const rooms = Object.values(roomsData)
+            .filter(room => room.isActive && !room.gameStarted && room.currentPlayers < room.maxPlayers)
+            .map(room => ({
+              ...room,
+              // Calcular jugadores reales conectados
+              currentPlayers: room.players ? Object.values(room.players).filter(p => p.isOnline).length : 0
+            }))
+            .filter(room => room.currentPlayers > 0); // Solo mostrar salas con jugadores
+            
+          displayRooms(rooms);
+        } else {
+          displayRooms([]);
+        }
+      });
+    }
+
+    function displayRooms(rooms) {
+      if (rooms.length === 0) {
+        roomsList.innerHTML = '<div class="no-rooms">No hay salas disponibles. ¡Crea una nueva!</div>';
+        return;
+      }
+
+      roomsList.innerHTML = '';
+      
+      rooms.forEach(room => {
+        const roomElement = document.createElement('div');
+        roomElement.className = 'room-item';
+        
+        // Verificar si la sala está llena
+        const isFull = room.currentPlayers >= room.maxPlayers;
+        const statusText = isFull ? 'Llena' : 'Unirse';
+        
+        roomElement.innerHTML = `
+          <div class="room-info">
+            <h4>Sala de ${room.hostName}</h4>
+            <p>Código: ${room.roomId}</p>
+            <small style="color: #666;">Jugadores en línea: ${room.currentPlayers}</small>
+          </div>
+          <div style="display: flex; align-items: center;">
+            <span class="room-players" style="margin-right: 10px;">${room.currentPlayers}/${room.maxPlayers}</span>
+            <button class="join-room-btn" onclick="joinRoom('${room.roomId}')" ${isFull ? 'disabled' : ''}>
+              ${statusText}
+            </button>
+          </div>
+        `;
+        
+        roomsList.appendChild(roomElement);
+      });
+    }
+
+    // Función global para unirse a sala
+    window.joinRoom = async function(roomId) {
+      try {
+        const button = event.target;
+        button.disabled = true;
+        button.textContent = 'Uniéndose...';
+        
+        await roomManager.joinRoom(roomId, currentUser);
+        showMessage('¡Unido a la sala exitosamente!', 'success');
+        
+        setTimeout(() => {
+          window.location.href = `multiplayer.html?room=${roomId}`;
+        }, 1500);
+        
+      } catch (error) {
+        showMessage(`Error: ${error.message}`);
+        event.target.disabled = false;
+        event.target.textContent = 'Unirse';
+      }
+    };
+
+    // Función global para volver
+    window.goBack = function() {
+      window.location.href = 'mode.html';
+    };
+  </script>
+</body>
+</html>

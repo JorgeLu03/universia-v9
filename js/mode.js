@@ -42,8 +42,9 @@ document.addEventListener('DOMContentLoaded', () => {
       localStorage.setItem("dificultad", dificultad);
       window.location.href = 'level.html';
 
-    } else {
-      alert('El modo multijugador estara disponible proximamente.');
+    } else if (selectedMode === 'multijugador') {
+      // Redirigir al selector de salas multijugador
+      window.location.href = 'multiplayer-rooms.html';
     }
   });
 

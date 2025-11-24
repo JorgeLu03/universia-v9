@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Universia - Multijugador</title>
+  <link rel="stylesheet" href="css/game.css">
+  <style>
+    #multiplayerUI {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(1, 41, 95, 0.9);
+      color: #FDF0D5;
+      padding: 15px;
+      border-radius: 10px;
+      font-family: Arial, sans-serif;
+      min-width: 200px;
+    }
+
+    #playersList {
+      margin-top: 10px;
+    }
+
+    .player-info {
+      margin: 5px 0;
+      padding: 5px;
+      background: rgba(253, 240, 213, 0.1);
+      border-radius: 5px;
+    }
+
+    .player-info.current-player {
+      background: rgba(255, 179, 15, 0.3);
+    }
+
+    #connectionStatus {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(1, 41, 95, 0.9);
+      color: #FDF0D5;
+      padding: 10px 15px;
+      border-radius: 10px;
+      font-family: Arial, sans-serif;
+    }
+
+    .status-connected {
+      color: #4CAF50 !important;
+    }
+
+    .status-disconnected {
+      color: #f44336 !important;
+    }
+
+    #chatUI {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(1, 41, 95, 0.9);
+      color: #FDF0D5;
+      padding: 15px;
+      border-radius: 10px;
+      width: 300px;
+      max-height: 200px;
+    }
+
+    #chatMessages {
+      height: 120px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      padding: 5px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 5px;
+      font-size: 12px;
+    }
+
+    #chatInput {
+      width: 70%;
+      padding: 5px;
+      border: none;
+      border-radius: 3px;
+      background: rgba(253, 240, 213, 0.9);
+      color: #01295F;
+    }
+
+    #sendChat {
+      width: 25%;
+      padding: 5px;
+      border: none;
+      border-radius: 3px;
+      background: #FFB30F;
+      color: #01295F;
+      cursor: pointer;
+      margin-left: 5px;
+    }
+
+    #exitMultiplayer {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #FD151B;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    #exitMultiplayer:hover {
+      background: #d41317;
+    }
+
+    #battlePrompt {
+      z-index: 1000;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: translate(-50%, -50%) scale(1); }
+      50% { transform: translate(-50%, -50%) scale(1.05); }
+      100% { transform: translate(-50%, -50%) scale(1); }
+    }
+
+    .battle-buttons:hover {
+      opacity: 0.8;
+      transform: scale(1.02);
+    }
+
+    .battle-buttons:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    #battleUI {
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    }
+
+  </style>
+</head>
+<body>
+  <div class="contenedor">
+    <!-- UI de Multijugador -->
+    <div id="multiplayerUI">
+      <h3>Sala Multijugador</h3>
+      <div id="roomInfo">
+        <p>Sala ID: <span id="roomId">Conectando...</span></p>
+        <p>Jugadores: <span id="playerCount">0</span>/4</p>
+      </div>
+      <div id="playersList">
+        <!-- Lista de jugadores se llenará dinámicamente -->
+      </div>
+    </div>
+
+    <!-- Estado de conexión -->
+    <div id="connectionStatus" class="status-disconnected">
+      Conectando...
+    </div>
+
+    <!-- Chat -->
+  <div id="chatUI">
+    <div id="chatMessages"></div>
+    <input type="text" id="chatInput" placeholder="Escribe un mensaje..." maxlength="100">
+    <button id="sendChat">Enviar</button>
+  </div>
+
+  <!-- Prompt de batalla -->
+  <div id="battlePrompt" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(1, 41, 95, 0.95); color: #FDF0D5; padding: 15px; border-radius: 10px; text-align: center; border: 2px solid #FFB30F; font-weight: bold;"></div>
+
+  <!-- UI de Combate -->
+  <div id="battleUI" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(1, 41, 95, 0.95); color: #FDF0D5; padding: 20px; border-radius: 15px; width: 600px; max-width: 90vw; z-index: 2000; border: 3px solid #FFB30F;">
+    <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+      <!-- Jugador -->
+      <div style="flex: 1; margin-right: 10px;">
+        <h3 id="playerName" style="margin: 0 0 5px 0; color: #FFB30F;">USERNAME</h3>
+        <div style="background: #333; height: 20px; border-radius: 5px; overflow: hidden;">
+          <div id="playerHP" style="background: #849324; height: 100%; width: 100%; transition: width 0.3s;"></div>
+        </div>
+        <p id="playerHPText" style="margin: 5px 0 0 0; font-size: 14px;">HP: 100/100</p>
+        <div style="background: #333; height: 20px; border-radius: 5px; overflow: hidden;">
+          <div id="playerEnergy" style="background: #FFB30F; height: 100%; width: 100%; transition: width 0.3s;"></div>
+        </div>
+        <p id="playerEnergyText" style="margin: 5px 0 0 0; font-size: 14px;">Energia: 100/100</p>
+      </div>
+      
+      <!-- Oponente -->
+      <div style="flex: 1; margin-left: 10px;">
+        <h3 id="enemyName" style="margin: 0 0 5px 0; color: #FD151B;">Oponente</h3>
+        <div style="background: #333; height: 20px; border-radius: 5px; overflow: hidden;">
+          <div id="enemyHP" style="background: #FD151B; height: 100%; width: 100%; transition: width 0.3s;"></div>
+        </div>
+        <p id="enemyHPText" style="margin: 5px 0 0 0; font-size: 14px;">HP: 100/100</p>
+      </div>
+    </div>
+    
+    <!-- Mensaje de batalla -->
+    <div id="battleMessage" style="background: rgba(0, 0, 0, 0.5); padding: 10px; border-radius: 5px; margin-bottom: 15px; min-height: 40px;">
+      <p style="margin: 0;">Presiona ATACAR para comenzar el combate</p>
+    </div>
+    
+    <!-- Botones de acción -->
+    <div id="battleActions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+      <button id="attackBtn" class="battle-buttons" style="background: #849324; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: background 0.3s;">ATACAR</button>
+      <button id="specialBtn" class="battle-buttons" style="background: #FFB30F; color: #01295F; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: background 0.3s;">ATAQUE ESPECIAL</button>
+      <button id="defendBtn" class="battle-buttons" style="background: #4CAF50; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: background 0.3s;">DEFENDER</button>
+      <button id="runBtn" class="battle-buttons" style="background: #FD151B; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: background 0.3s;">HUIR</button>
+    </div>
+  </div>
+
+  <!-- Indicador de interacción (no usado en multijugador pero requerido por battle.js) -->
+  <div id="interactPrompt" style="display: none;"></div>
+
+    <!-- Botón para salir -->
+    <button id="exitMultiplayer">Salir del Multijugador</button>
+
+
+
+    <!-- Escena 3D -->
+    <div id="escena3D"></div>
+  </div>
+
+  <script type="module" src="js/multiplayer.js"></script>
+</body>
+</html>

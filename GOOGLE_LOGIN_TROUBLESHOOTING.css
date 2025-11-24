@@ -1,0 +1,93 @@
+/* 
+SOLUCIÓN COMPLETA PARA ERRORES DE GOOGLE LOGIN
+=============================================
+
+PROBLEMAS COMUNES Y SOLUCIONES:
+
+1. ERROR: auth/popup-blocked
+   - CAUSA: El navegador bloquea popups
+   - SOLUCIÓN: Implementado sistema de fallback a redirect
+
+2. ERROR: auth/cancelled-popup-request  
+   - CAUSA: Usuario cierra la ventana o múltiples requests
+   - SOLUCIÓN: Control de estado para prevenir múltiples requests
+
+3. ERROR: Cross-Origin-Opener-Policy
+   - CAUSA: Políticas de seguridad del navegador
+   - SOLUCIÓN: Usar redirect en lugar de popup
+
+CONFIGURACIÓN REQUERIDA EN FIREBASE CONSOLE:
+==========================================
+
+1. Ve a Firebase Console > Authentication > Sign-in method
+2. Habilita "Google" como proveedor
+3. Agrega los dominios autorizados:
+   - localhost (para desarrollo local)
+   - tu-dominio.com (para producción)
+
+4. Configurar OAuth 2.0 en Google Cloud Console:
+   - Ve a Google Cloud Console
+   - Selecciona tu proyecto
+   - Ve a APIs & Services > Credentials
+   - Edita tu OAuth 2.0 Client ID
+   - Agrega URIs de redirección autorizados:
+     * http://localhost:3000 (para desarrollo)
+     * http://localhost:5000 (para servidor local)
+     * http://localhost:8080 (puerto común)
+     * https://tu-dominio.com (producción)
+
+MÉTODOS IMPLEMENTADOS:
+====================
+
+1. POPUP (Método principal)
+   - Más rápido y mejor UX
+   - Se intenta primero
+
+2. REDIRECT (Fallback automático)
+   - Se usa cuando popup falla
+   - Compatible con todos los navegadores
+
+3. MANEJO DE ERRORES MEJORADO
+   - Mensajes específicos por tipo de error
+   - Estado visual para el usuario
+   - Prevención de requests duplicados
+
+PARA PROBAR:
+===========
+
+1. Abre login.html
+2. Intenta login con Google
+3. Si popup funciona, perfecto
+4. Si popup se bloquea, automáticamente usa redirect
+5. Ambos métodos deben funcionar correctamente
+
+CONSEJOS ADICIONALES:
+===================
+
+- Asegúrate que el navegador permite popups para localhost
+- En producción, usa HTTPS siempre
+- Verifica que los dominios estén autorizados
+- Si sigues teniendo problemas, revisa la consola de Firebase
+*/
+
+/* Estilos para mejorar la UI del login */
+#google-login-status {
+    font-size: 14px;
+    border-radius: 8px !important;
+    border: 1px solid;
+}
+
+#btn-google {
+    transition: all 0.3s ease !important;
+}
+
+#btn-google:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+#btn-google:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
