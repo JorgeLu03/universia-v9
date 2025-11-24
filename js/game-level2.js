@@ -53,6 +53,52 @@ const enableCollisionDebug = true;
 const scenarioScale = 3;
 const scenarioPosition = new THREE.Vector3(0, 0, 0);
 
+// Variables de Partículas (Explosión)
+let particlesPool = [];
+const maxParticles = 500;
+let particleGeometry;
+let particleMaterial;
+let particlesSystem;
+const explosionDuration = 1.0; 
+
+// Inicializa la geometría y el material de las partículas
+function initializeParticles() {
+  particleGeometry = new THREE.BufferGeometry();
+  const positions = new Float32Array(maxParticles * 3);
+  const colors = new Float32Array(maxParticles * 3);
+  
+  for (let i = 0; i < maxParticles * 3; i++) {
+    positions[i] = 0;
+  }
+  
+  particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3).setUsage(THREE.DynamicDrawUsage));
+  particleGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3).setUsage(THREE.DynamicDrawUsage));
+  
+  particleMaterial = new THREE.PointsMaterial({
+    size: 0.2,
+    sizeAttenuation: true,
+    transparent: true,
+    opacity: 1.0,
+    vertexColors: true
+  });
+  
+  particlesSystem = new THREE.Points(particleGeometry, particleMaterial);
+  particlesSystem.visible = false;
+  scene.add(particlesSystem);
+  
+  for (let i = 0; i < maxParticles; i++) {
+    particlesPool.push({
+      active: false,
+      velocity: new THREE.Vector3(),
+      lifetime: 0,
+      maxLifetime: 0,
+      originalColor: new THREE.Color()
+    });
+  }
+  console.log('[level2] Sistema de partículas inicializado');
+}
+initializeParticles();
+
 // Ejemplo de límites más grandes para el nivel 2
 const scenarioBounds = {
 	minX: -10.5,
@@ -568,6 +614,104 @@ function updateCamera() {
 	camera.lookAt(player.position);
 }
 
+// Función para crear el efecto de explosión (Gris/Blanco)
+function createExplosion(position, color, numParticles = 50) {
+  particlesSystem.visible = true;
+  let activeCount = 0;
+
+  const baseColorHex = 0xD3D3D3; 
+
+  for (let i = 0; i < maxParticles; i++) {
+    const particle = particlesPool[i];
+    if (!particle.active) {
+      // Posición
+      const pos = particleGeometry.attributes.position.array;
+      pos[i * 3 + 0] = position.x;
+      pos[i * 3 + 1] = position.y + 1.0;
+      pos[i * 3 + 2] = position.z;
+
+      // Color (Usar color base gris y variar aleatoriamente hacia el blanco)
+      const particleColor = new THREE.Color(baseColorHex);
+      
+      const variance = Math.random() * 0.15;
+      particleColor.r = Math.min(1.0, particleColor.r + variance);
+      particleColor.g = Math.min(1.0, particleColor.g + variance);
+      particleColor.b = Math.min(1.0, particleColor.b + variance);
+      
+      const colors = particleGeometry.attributes.color.array;
+      colors[i * 3 + 0] = particleColor.r;
+      colors[i * 3 + 1] = particleColor.g;
+      colors[i * 3 + 2] = particleColor.b;
+      
+      // Velocidad aleatoria (efecto de estallido)
+      const speed = Math.random() * 5 + 3;
+      particle.velocity.set(
+        (Math.random() - 0.5) * speed,
+        Math.random() * speed + 2, // Empuje vertical
+        (Math.random() - 0.5) * speed
+      );
+      
+      // Inicializar y activar
+      particle.active = true;
+      particle.lifetime = 0;
+      particle.maxLifetime = explosionDuration * (0.5 + Math.random() * 0.5);
+      particle.originalColor.copy(particleColor);
+      activeCount++;
+      if (activeCount >= numParticles) break;
+    }
+  }
+
+  particleGeometry.attributes.position.needsUpdate = true;
+  particleGeometry.attributes.color.needsUpdate = true;
+}
+
+// Actualizar partículas cada frame
+function updateParticles(delta) {
+  if (!particlesSystem || !particlesSystem.visible) return;
+
+  const positions = particleGeometry.attributes.position.array;
+  const colors = particleGeometry.attributes.color.array;
+  let activeCount = 0;
+  
+  const gravity = -9.8 * 0.5;
+  
+  for (let i = 0; i < maxParticles; i++) {
+    const particle = particlesPool[i];
+    
+    if (particle.active) {
+      particle.lifetime += delta;
+      
+      if (particle.lifetime > particle.maxLifetime) {
+        // Desactivar y mover fuera de la vista
+        particle.active = false;
+        positions[i * 3 + 0] = 10000;
+        positions[i * 3 + 1] = 10000;
+        positions[i * 3 + 2] = 10000;
+        colors[i * 3 + 0] = 0;
+        colors[i * 3 + 1] = 0;
+        colors[i * 3 + 2] = 0;
+        continue;
+      }
+
+      // Aplicar gravedad y velocidad
+      particle.velocity.y += gravity * delta;
+      positions[i * 3 + 0] += particle.velocity.x * delta;
+      positions[i * 3 + 1] += particle.velocity.y * delta;
+      positions[i * 3 + 2] += particle.velocity.z * delta;
+      
+      activeCount++;
+    }
+  }
+
+  particleGeometry.attributes.position.needsUpdate = true;
+  particleGeometry.attributes.color.needsUpdate = true;
+  
+  // Ocultar si todas las partículas han terminado
+  if (activeCount === 0) {
+    particlesSystem.visible = false;
+  }
+}
+
 // Loop de animación unificado
 const clock = new THREE.Clock();
 function animate() {
@@ -594,6 +738,7 @@ function animate() {
 		updateAggressiveEnemies();
 		checkNearbyEnemies();
 		updateCamera();
+		updateParticles(delta);
 	}
 	renderer.render(scene, camera);
 }
@@ -876,6 +1021,7 @@ function endBattle(won) {
 	setTimeout(() => {
 		stopBattleMusic();
 		if (won) {
+
 			Swal.fire({
             title: "¡Ganaste!",
             text: "Has derrotado a " + enemyStats.name,
@@ -885,6 +1031,8 @@ function endBattle(won) {
             confirmButtonText: "¡Genial!"
           });
 			if (currentBattleEnemy) {
+
+				createExplosion(currentBattleEnemy.position, '#0xD3D3D3', 100); // Explosión 
 				scene.remove(currentBattleEnemy);
 				const index = enemies.indexOf(currentBattleEnemy);
 				if (index > -1) {
