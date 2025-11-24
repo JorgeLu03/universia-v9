@@ -648,10 +648,21 @@ class MultiplayerGame {
                     
                     // Si este jugador envió una solicitud, verificar el estado
                     if (request.fromplayerID === this.currentUser.uid && this.pendingBattleRequest === requestId) {
+                        console.log('[BATALLA-SOLICITUD] Mi solicitud detectada:', {
+                            requestId: requestId,
+                            estado: request.status,
+                            enviePor: request.fromplayerID,
+                            destinatario: request.toplayerID,
+                            yoEnvieLaSolicitud: true,
+                            estoyEnBatalla: this.inBattle
+                        });
+                        
                         if (request.status === "accepted" && !this.inBattle) {
-                            this.startBattleWithPlayer(request.toplayerID);
+                            console.log('[BATALLA-SOLICITUD] ¡Mi solicitud fue ACEPTADA! Iniciando batalla...');
+                            this.startBattleWithPlayer(request.toplayerID, requestId);
                             this.pendingBattleRequest = null;
                         } else if (request.status === "rejected") {
+                            console.log('[BATALLA-SOLICITUD] Mi solicitud fue rechazada');
                             this.showNotification('Tu solicitud de batalla fue rechazada', 'warning');
                             this.pendingBattleRequest = null;
                         }
@@ -720,15 +731,31 @@ class MultiplayerGame {
 
     async respondToBattleRequest(requestId, response) {
         try {
+            console.log('[BATALLA-RESPUESTA] Respondiendo a solicitud:', {
+                requestId: requestId,
+                respuesta: response,
+                miUID: this.currentUser.uid,
+                estoyEnBatalla: this.inBattle
+            });
+            
             await set(ref(database, `battle_requests/${requestId}/status`), response);
+            console.log('[BATALLA-RESPUESTA] Estado actualizado en Firebase');
             
             if (response === 'accepted') {
                 this.showNotification('Batalla aceptada. ¡Preparándose para el combate!', 'success');
                 
                 // El jugador que acepta también debe entrar en batalla inmediatamente
                 const request = (await get(ref(database, `battle_requests/${requestId}`))).val();
+                console.log('[BATALLA-RESPUESTA] Datos de la solicitud:', request);
+                
                 if (request && !this.inBattle) {
-                    this.startBattleWithPlayer(request.fromplayerID);
+                    console.log('[BATALLA-RESPUESTA] ACEPTÉ LA BATALLA - Iniciando startBattleWithPlayer...');
+                    this.startBattleWithPlayer(request.fromplayerID, requestId);
+                } else {
+                    console.warn('[BATALLA-RESPUESTA] No se puede iniciar batalla:', {
+                        tieneRequest: !!request,
+                        estoyEnBatalla: this.inBattle
+                    });
                 }
             } else {
                 this.showNotification('Solicitud de batalla rechazada', 'info');
@@ -748,25 +775,52 @@ class MultiplayerGame {
         }
     }
 
-    async startBattleWithPlayer(opponentId) {
+    async startBattleWithPlayer(opponentId, requestId = null) {
         const opponent = this.players.get(opponentId);
         if (!opponent) return;
         
         console.log(`¡Iniciando batalla sincronizada contra ${opponent.playerName}!`);
         
-        // Crear ID único para la batalla
-        this.activeBattleId = `battle_${Date.now()}`;
+        // Verificar que tenemos una sesión válida antes de crear la batalla
+        try {
+            if (!this.roomId || !this.currentUser) {
+                throw new Error('Sesión inválida');
+            }
+            console.log('[BATALLA] Verificación de sesión exitosa');
+        } catch (error) {
+            console.error('[BATALLA] Error de sesión:', error);
+            this.showNotification('Error de sesión. Intenta de nuevo.', 'error');
+            return;
+        }
+        
+        // Determinar orden consistente (alfabético por UID para consistencia)
+        const battlePlayer1Id = this.currentUser.uid < opponentId ? this.currentUser.uid : opponentId;
+        const battlePlayer2Id = this.currentUser.uid < opponentId ? opponentId : this.currentUser.uid;
+        
+        // Crear ID único para la batalla BASADO EN LOS UIDs para que ambos jugadores usen el mismo
+        this.activeBattleId = `battle_${battlePlayer1Id}_${battlePlayer2Id}_${requestId || Date.now()}`;
         this.activeBattleRef = ref(database, `active_battles/${this.activeBattleId}`);
         
         // Determinar quién va primero (el desafiante siempre va primero)
         const isChallenger = this.currentUser.uid < opponentId; // Usar comparación alfabética para consistencia
         this.isMyTurn = isChallenger;
         
+        console.log('[BATALLA] Configuración inicial:', {
+            miUID: this.currentUser.uid,
+            oponenteUID: opponentId,
+            battleId: this.activeBattleId,
+            soyDesafiante: isChallenger,
+            esMiTurno: this.isMyTurn
+        });
+        
+        const player1Name = battlePlayer1Id === this.currentUser.uid ? (this.currentUser.displayName || 'Jugador') : opponent.playerName;
+        const player2Name = battlePlayer2Id === this.currentUser.uid ? (this.currentUser.displayName || 'Jugador') : opponent.playerName;
+        
         // Crear estado inicial de batalla
         const initialBattleState = {
             player1: {
-                id: this.currentUser.uid,
-                name: this.currentUser.displayName || 'Jugador',
+                id: battlePlayer1Id,
+                name: player1Name,
                 hp: 100,
                 maxHp: 100,
                 energy: 100,
@@ -775,8 +829,8 @@ class MultiplayerGame {
                 defense: 10
             },
             player2: {
-                id: opponentId,
-                name: opponent.playerName,
+                id: battlePlayer2Id,
+                name: player2Name,
                 hp: 100,
                 maxHp: 100,
                 energy: 100,
@@ -784,19 +838,96 @@ class MultiplayerGame {
                 attack: 20,
                 defense: 10
             },
-            currentTurn: isChallenger ? this.currentUser.uid : opponentId,
+            currentTurn: battlePlayer1Id, // Player1 siempre va primero
             status: 'active',
             lastAction: null,
-            message: 'La batalla ha comenzado. ¡Es el turno del primer jugador!'
+            message: `La batalla ha comenzado. ¡Es el turno de ${player1Name}!`
         };
         
-        // Solo el desafiante crea el estado inicial
-        if (isChallenger) {
-            await set(this.activeBattleRef, initialBattleState);
-        }
-        
-        // Configurar listener para el estado de batalla
+        // Configurar listener PRIMERO para ambos jugadores
+        console.log('[BATALLA] Configurando listener antes de crear/verificar estado');
         this.setupBattleStateListener();
+        
+        // Determinar si es mi turno basado en el estado inicial
+        this.isMyTurn = initialBattleState.currentTurn === this.currentUser.uid;
+        console.log('[BATALLA] Mi turno inicial:', this.isMyTurn);
+        
+        // Solo player1 (el de menor UID) crea el estado inicial para evitar conflictos
+        if (this.currentUser.uid === battlePlayer1Id) {
+            console.log('[BATALLA] SOY PLAYER1 - Creando estado inicial');
+            console.log('[BATALLA] Mis datos:', {
+                uid: this.currentUser.uid,
+                player1Id: battlePlayer1Id,
+                comparacion: this.currentUser.uid === battlePlayer1Id
+            });
+            
+            // Esperar un momento para que los listeners de ambos jugadores estén listos
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            console.log('[BATALLA] Creando estado inicial en Firebase...');
+            await set(this.activeBattleRef, initialBattleState);
+            console.log('[BATALLA] Estado inicial creado exitosamente en Firebase');
+            
+            // Verificar que se creó correctamente
+            setTimeout(async () => {
+                try {
+                    const verifySnapshot = await get(this.activeBattleRef);
+                    if (verifySnapshot.exists()) {
+                        console.log('[BATALLA] Verificación Player1 - Estado creado correctamente:', verifySnapshot.val());
+                    } else {
+                        console.error('[BATALLA] ERROR - Player1 no pudo crear el estado');
+                    }
+                } catch (error) {
+                    console.error('[BATALLA] Error verificando creación del estado:', error);
+                }
+            }, 200);
+            
+        } else {
+            console.log('[BATALLA] SOY PLAYER2 - Esperando estado inicial de Player1');
+            console.log('[BATALLA] Mis datos:', {
+                uid: this.currentUser.uid,
+                player1Id: battlePlayer1Id,
+                comparacion: this.currentUser.uid === battlePlayer1Id
+            });
+            
+            // Para player2, esperar hasta que el estado inicial exista
+            let attempts = 0;
+            const maxAttempts = 25; // Aumentamos un poco el tiempo
+            
+            while (attempts < maxAttempts) {
+                try {
+                    const snapshot = await get(this.activeBattleRef);
+                    if (snapshot.exists()) {
+                        console.log('[BATALLA] Player2 detectó estado inicial creado por Player1:', snapshot.val());
+                        break;
+                    } else {
+                        console.log(`[BATALLA] Player2 esperando estado (intento ${attempts + 1}/${maxAttempts})`);
+                        await new Promise(resolve => setTimeout(resolve, 300)); // Un poco más de tiempo
+                        attempts++;
+                    }
+                } catch (error) {
+                    console.error('[BATALLA] Error verificando estado inicial:', error);
+                    attempts++;
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                }
+            }
+            
+            if (attempts >= maxAttempts) {
+                console.error('[BATALLA] Player2 no pudo encontrar el estado inicial después de', maxAttempts, 'intentos');
+                console.error('[BATALLA] Player1 podría no haber iniciado la batalla o haber un problema de conectividad');
+                this.showNotification('Error: El otro jugador no respondió. Intenta de nuevo.', 'error');
+                
+                // Intentar crear el estado nosotros mismos como respaldo
+                console.log('[BATALLA] Player2 intentando crear estado de emergencia...');
+                try {
+                    await set(this.activeBattleRef, initialBattleState);
+                    console.log('[BATALLA] Player2 creó estado de emergencia exitosamente');
+                } catch (emergencyError) {
+                    console.error('[BATALLA] Player2 no pudo crear estado de emergencia:', emergencyError);
+                    return;
+                }
+            }
+        }
         
         // Detener movimiento del jugador local
         this.velocity.set(0, 0, 0);
@@ -809,22 +940,123 @@ class MultiplayerGame {
         
         // Mostrar UI de batalla personalizada
         this.showSyncedBattleUI();
+        
+        // Verificar oponente y actualizar UI
+        setTimeout(() => {
+            this.verifyOpponentConnection(opponentId);
+            if (this.battleState) {
+                this.updateSyncedBattleUI(this.battleState);
+            }
+        }, 500);
     }
 
     setupBattleStateListener() {
+        console.log('[BATALLA] Configurando listener para:', this.activeBattleId);
+        console.log('[BATALLA] Referencia Firebase:', this.activeBattleRef.toString());
+        console.log('[BATALLA] UID del jugador actual:', this.currentUser.uid);
+        
         this.battleStateListener = onValue(this.activeBattleRef, (snapshot) => {
+            const timestamp = new Date().toLocaleTimeString();
+            console.log(`[BATALLA ${timestamp}] Listener activado, snapshot existe:`, snapshot.exists());
+            
             const battleState = snapshot.val();
             if (battleState) {
+                console.log(`[BATALLA ${timestamp}] Estado recibido completo:`, {
+                    battleId: this.activeBattleId,
+                    mensaje: battleState.message,
+                    player1: {
+                        id: battleState.player1.id,
+                        name: battleState.player1.name,
+                        hp: battleState.player1.hp,
+                        energy: battleState.player1.energy
+                    },
+                    player2: {
+                        id: battleState.player2.id,
+                        name: battleState.player2.name,
+                        hp: battleState.player2.hp,
+                        energy: battleState.player2.energy
+                    },
+                    turnoActual: battleState.currentTurn,
+                    esMiTurno: battleState.currentTurn === this.currentUser.uid,
+                    ultimaAccion: battleState.lastAction,
+                    status: battleState.status
+                });
+                
+                // Actualizar estado local
+                const previousState = this.battleState;
                 this.battleState = battleState;
                 this.isMyTurn = battleState.currentTurn === this.currentUser.uid;
+                
+                // Verificar si hubo cambios significativos
+                if (previousState) {
+                    const hpChanged = 
+                        previousState.player1.hp !== battleState.player1.hp ||
+                        previousState.player2.hp !== battleState.player2.hp;
+                    
+                    const turnChanged = previousState.currentTurn !== battleState.currentTurn;
+                    
+                    if (hpChanged || turnChanged) {
+                        console.log(`[BATALLA ${timestamp}] Cambios detectados:`, {
+                            hpChanged,
+                            turnChanged,
+                            previousTurn: previousState.currentTurn,
+                            newTurn: battleState.currentTurn
+                        });
+                    }
+                }
+                
+                // Actualizar UI
                 this.updateSyncedBattleUI(battleState);
                 
                 // Verificar si la batalla ha terminado
                 if (battleState.status === 'finished') {
+                    console.log(`[BATALLA ${timestamp}] Batalla terminada, procesando resultado`);
                     this.endSyncedBattle(battleState);
                 }
+            } else {
+                console.log(`[BATALLA ${timestamp}] Estado recibido es null/undefined`);
             }
+        }, (error) => {
+            console.error('[BATALLA] Error en listener:', error);
         });
+        
+        console.log('[BATALLA] Listener configurado exitosamente');
+        
+        // Verificar inmediatamente el estado actual
+        setTimeout(async () => {
+            try {
+                const snapshot = await get(this.activeBattleRef);
+                if (snapshot.exists()) {
+                    console.log('[BATALLA] Verificación inmediata - Estado existe:', snapshot.val());
+                } else {
+                    console.log('[BATALLA] Verificación inmediata - No hay estado');
+                }
+            } catch (error) {
+                console.error('[BATALLA] Error en verificación inmediata:', error);
+            }
+        }, 1000);
+    }
+
+    async verifyOpponentConnection(opponentId) {
+        try {
+            const playerRef = ref(database, `game_sessions/${this.roomId}/players/${opponentId}`);
+            const snapshot = await get(playerRef);
+            
+            if (snapshot.exists()) {
+                const opponentData = snapshot.val();
+                console.log('[BATALLA] Estado del oponente:', {
+                    id: opponentId,
+                    nombre: opponentData.playerName,
+                    enLinea: opponentData.isOnline,
+                    ultimaActividad: opponentData.joinedAt
+                });
+            } else {
+                console.warn('[BATALLA] Oponente no encontrado en la sala');
+                this.showNotification('El oponente se desconect贸', 'warning');
+            }
+        } catch (error) {
+            console.error('[BATALLA] Error verificando oponente:', error);
+        }
     }
 
     showSyncedBattleUI() {
@@ -844,6 +1076,14 @@ class MultiplayerGame {
     }
 
     async performSyncedAction(actionType) {
+        console.log('[ACCION] Intentando realizar acción:', {
+            accion: actionType,
+            esMiTurno: this.isMyTurn,
+            tieneEstado: !!this.battleState,
+            turnoActual: this.battleState?.currentTurn,
+            miUID: this.currentUser.uid
+        });
+        
         if (!this.isMyTurn || !this.battleState) {
             this.showNotification('No es tu turno', 'warning');
             return;
@@ -920,9 +1160,63 @@ class MultiplayerGame {
         }
         
         try {
+            console.log('[BATALLA] Actualizando estado:', {
+                battleId: this.activeBattleId,
+                accion: actionType,
+                jugador: myData.name,
+                dañoInfligido: damage,
+                estadoAnterior: {
+                    player1HP: this.battleState.player1.hp,
+                    player2HP: this.battleState.player2.hp,
+                    turno: this.battleState.currentTurn
+                },
+                estadoNuevo: {
+                    player1HP: newBattleState.player1.hp,
+                    player2HP: newBattleState.player2.hp,
+                    turno: newBattleState.currentTurn
+                },
+                refPath: this.activeBattleRef.toString(),
+                timestamp: new Date().toISOString()
+            });
+            
+            if (!this.activeBattleRef) {
+                throw new Error('Referencia de batalla no encontrada');
+            }
+            
+            console.log('[BATALLA] Enviando estado completo a Firebase:', JSON.stringify(newBattleState, null, 2));
+            
             await set(this.activeBattleRef, newBattleState);
+            console.log('[BATALLA] Estado actualizado exitosamente en Firebase');
+            
+            // Verificar que la actualización se guardó correctamente
+            setTimeout(async () => {
+                try {
+                    const verifySnapshot = await get(this.activeBattleRef);
+                    if (verifySnapshot.exists()) {
+                        const savedState = verifySnapshot.val();
+                        console.log('[BATALLA] Verificación post-escritura:', {
+                            guardadoCorrectamente: savedState.lastAction?.timestamp === newBattleState.lastAction.timestamp,
+                            hpGuardado: {
+                                player1: savedState.player1.hp,
+                                player2: savedState.player2.hp
+                            },
+                            turnoGuardado: savedState.currentTurn
+                        });
+                    } else {
+                        console.error('[BATALLA] ¡El estado no se guardó correctamente!');
+                    }
+                } catch (verifyError) {
+                    console.error('[BATALLA] Error en verificación post-escritura:', verifyError);
+                }
+            }, 500);
+            
         } catch (error) {
-            console.error('Error al actualizar estado de batalla:', error);
+            console.error('[BATALLA] Error al actualizar estado de batalla:', error);
+            console.error('[BATALLA] Detalles del error:', {
+                message: error.message,
+                code: error.code,
+                stack: error.stack
+            });
         }
     }
 
@@ -930,9 +1224,39 @@ class MultiplayerGame {
         const myData = battleState.player1.id === this.currentUser.uid ? battleState.player1 : battleState.player2;
         const opponentData = battleState.player1.id === this.currentUser.uid ? battleState.player2 : battleState.player1;
         
+        console.log('[UI] Actualizando interfaz detallada:', {
+            timestampLocal: new Date().toLocaleTimeString(),
+            miUID: this.currentUser.uid,
+            misDatos: {
+                name: myData.name,
+                hp: myData.hp,
+                maxHp: myData.maxHp,
+                energy: myData.energy
+            },
+            datosOponente: {
+                name: opponentData.name,
+                hp: opponentData.hp,
+                maxHp: opponentData.maxHp,
+                energy: opponentData.energy
+            },
+            turnoActual: battleState.currentTurn,
+            esMiTurno: this.isMyTurn,
+            ultimaAccion: battleState.lastAction,
+            mensaje: battleState.message
+        });
+        
+        // Verificar que los elementos UI existen
+        const playerNameEl = document.getElementById('playerName');
+        const enemyNameEl = document.getElementById('enemyName');
+        
+        if (!playerNameEl || !enemyNameEl) {
+            console.error('[UI] Elementos de batalla no encontrados en el DOM');
+            return;
+        }
+        
         // Actualizar nombres
-        document.getElementById('playerName').textContent = myData.name;
-        document.getElementById('enemyName').textContent = opponentData.name;
+        playerNameEl.textContent = myData.name;
+        enemyNameEl.textContent = opponentData.name;
         
         // Actualizar barras de HP
         const playerHPPercent = (myData.hp / myData.maxHp) * 100;
@@ -968,6 +1292,13 @@ class MultiplayerGame {
         } else {
             document.getElementById('battleMessage').style.background = 'rgba(253, 21, 27, 0.3)';
         }
+        
+        console.log('[UI] Actualización de interfaz completada exitosamente:', {
+            botonesMiTurno: this.isMyTurn,
+            hpActualizado: `${myData.hp}/${myData.maxHp}`,
+            energiaActualizada: `${myData.energy}/${myData.maxEnergy}`,
+            timestamp: new Date().toLocaleTimeString()
+        });
     }
 
     async endSyncedBattle(battleState) {

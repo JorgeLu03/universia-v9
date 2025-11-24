@@ -9,7 +9,10 @@ async function renderRanking() {
   if (!rankingList) return;
   rankingList.innerHTML = '<li class="loading">Cargando puntuaciones...</li>';
   try {
+    console.log('[ranking] Intentando obtener puntuaciones...');
     const rows = await fetchTopScores();
+    console.log('[ranking] Puntuaciones obtenidas:', rows.length);
+    
     if (!rows.length) {
       rankingList.innerHTML = '<li class="empty">Aun no hay puntuaciones registradas</li>';
     } else {
@@ -21,8 +24,19 @@ async function renderRanking() {
       statusLabel.textContent = `Ultima actualizacion: ${new Date().toLocaleTimeString()}`;
     }
   } catch (error) {
-    console.error('[ranking] error', error);
-    rankingList.innerHTML = `<li class="error">${error.message}</li>`;
+    console.error('[ranking] error completo:', error);
+    let errorMsg = 'Error de conexión con el servidor';
+    
+    if (error.message.includes('Failed to fetch')) {
+      errorMsg = '⚠️ No se puede conectar al servidor de puntuaciones. Asegúrate de que la API esté corriendo en puerto 4000.';
+    } else if (error.message.includes('ERR_BLOCKED_BY_CLIENT')) {
+      errorMsg = '⚠️ Conexión bloqueada. Verifica la configuración CORS del servidor.';
+    }
+    
+    rankingList.innerHTML = `<li class="error">${errorMsg}</li>`;
+    if (statusLabel) {
+      statusLabel.textContent = `Error: ${new Date().toLocaleTimeString()}`;
+    }
   }
 }
 

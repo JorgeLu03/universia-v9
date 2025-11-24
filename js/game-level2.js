@@ -809,8 +809,18 @@ function playerSpecialAttack() {
 }
 function playerDefend() {
 	if (!isPlayerTurn) return;
-	showMessage(`${playerStats.name} se preparó para defenderse...`);
+	
+	// Recuperar energía al defenderse
+	const energyRecovery = 20;
+	playerStats.energy = Math.min(playerStats.maxEnergy, playerStats.energy + energyRecovery);
+	
+	showMessage(`${playerStats.name} se preparó para defenderse y recuperó ${energyRecovery} de energía...`);
 	playerStats.defense += 5;
+	
+	// Actualizar la interfaz de energía
+	updateEnergyUI();
+	updateBattleUI();
+	
 	isPlayerTurn = false;
 	setTimeout(() => {
 		enemyAttack();
@@ -844,12 +854,18 @@ function runFromBattle() {
 		setTimeout(enemyAttack, 1500);
 	}
 }
+// Función helper para convertir dificultad de español a inglés
+function getDifficultyForAPI(dificultad) {
+	return dificultad === 'dificil' ? 'hard' : 'normal';
+}
+
 async function persistLevelTwoScore() {
 	if (level2ScoreSaved) return;
 	try {
-		await awardScoreForLevel(2);
+		const difficulty = getDifficultyForAPI(dificultad);
+		await awardScoreForLevel(2, difficulty);
 		level2ScoreSaved = true;
-		console.log('[scores] nivel 2 guardado');
+		console.log(`[scores] nivel 2 guardado en modo ${difficulty}`);
 	} catch (error) {
 		level2ScoreSaved = false;
 		console.error('[scores] no se pudo guardar nivel 2', error);
@@ -868,7 +884,6 @@ function endBattle(won) {
             imageHeight: 100,
             confirmButtonText: "¡Genial!"
           });
-			persistLevelTwoScore();
 			if (currentBattleEnemy) {
 				scene.remove(currentBattleEnemy);
 				const index = enemies.indexOf(currentBattleEnemy);
@@ -879,7 +894,10 @@ function endBattle(won) {
 					nearbyEnemy = null;
 					document.getElementById('interactPrompt').style.display = 'none';
 				}
+				// Solo otorgar puntos cuando se complete el nivel completo
 				if (enemies.length === 0) {
+					persistLevelTwoScore();
+					console.log('🎉 ¡Nivel 2 completado! Puntos otorgados.');
 					Swal.fire({
 					title: "¡Nivel completado!",
 					text: "Has derrotado a todos los enemigos",

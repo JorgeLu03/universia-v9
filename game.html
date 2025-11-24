@@ -95,7 +95,7 @@
   </div>
 
   <script src="js/sweetalert2.all.min.js"></script>
-  <script src="js/pause-menu"></script>
+  <script src="js/pause-menu.js"></script>
   <script type="module">
     import { auth } from './js/firebase-config.js';
     import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
@@ -516,18 +516,6 @@
           }
       });
       
-    // Tucan - Enemigo
-    loaderGLB.load("assets/models/low_poly_toucan.glb", function (model) {
-      const obj = model.scene;
-      obj.rotateY(-Math.PI / 2);
-      obj.scale.set(0.12, 0.12, 0.12);
-      obj.position.set(-10, 0, 0);
-      obj.userData.enemyName = "Tucán";
-      obj.userData.isEnemy = true;
-      scene.add(obj);
-      enemies.push(obj);
-    });
-
     // Elephant Anim - Enemigo
     let mixer;
     const animScene = new GLTFLoader();
@@ -923,8 +911,16 @@
     function playerDefend() {
       if (!isPlayerTurn) return;
       
-      showMessage(`${playerStats.name} se preparó para defenderse...`);
+      // Recuperar energía al defenderse
+      const energyRecovery = 20;
+      playerStats.energy = Math.min(playerStats.maxEnergy, playerStats.energy + energyRecovery);
+      
+      showMessage(`${playerStats.name} se preparó para defenderse y recuperó ${energyRecovery} de energía...`);
       playerStats.defense += 5;
+      
+      // Actualizar la interfaz de energía
+      updateEnergyUI();
+      updateBattleUI();
       
       isPlayerTurn = false;
       setTimeout(() => {
@@ -959,12 +955,18 @@
       }
     }
 
+    // Función helper para convertir dificultad de español a inglés
+    function getDifficultyForAPI(dificultad) {
+      return dificultad === 'dificil' ? 'hard' : 'normal';
+    }
+
     async function persistLevelOneScore() {
       if (level1ScoreSaved) return;
       try {
-        await awardScoreForLevel(1);
+        const difficulty = getDifficultyForAPI(dificultad);
+        await awardScoreForLevel(1, difficulty);
         level1ScoreSaved = true;
-        console.log('[scores] nivel 1 guardado');
+        console.log(`[scores] nivel 1 guardado en modo ${difficulty}`);
       } catch (error) {
         level1ScoreSaved = false;
         console.error('[scores] no se pudo guardar nivel 1', error);
@@ -982,7 +984,6 @@
             imageHeight: 100,
             confirmButtonText: "¡Genial!"
           });
-          persistLevelOneScore();
           // Eliminar enemigo del escenario y del arreglo
           const defeatedEnemy = enemies.find(e => e.userData.enemyName === enemyStats.name);
           if (defeatedEnemy) {
@@ -990,7 +991,10 @@
             const idx = enemies.indexOf(defeatedEnemy);
             if (idx !== -1) enemies.splice(idx, 1);
 
+            // Solo otorgar puntos cuando se complete el nivel completo
             if (enemies.length === 0) {
+              persistLevelOneScore();
+              console.log('🎉 ¡Nivel 1 completado! Puntos otorgados.');
             Swal.fire({
               title: "¡Nivel completado!",
               text: "Has derrotado a todos los enemigos",
