@@ -27,14 +27,14 @@
         // Auto-detectar el entorno y configurar la API URL
         if (window.location.hostname.includes('devtunnels.ms')) {
             // Usar la misma URL base para servidor unificado
-            window.SCORES_API_URL = window.location.origin;
+            window.SCORES_API_URL = 'https://lwchvh8j-4000.usw3.devtunnels.ms';
         } else {
             // Entorno local - usar puerto 5501 por defecto para servidor unificado
 
             //A mi me funcionó con esto en la terminal:
             //npm rebuild better-sqlite3
             //npm start
-            window.SCORES_API_URL = 'http://localhost:4000';
+            window.SCORES_API_URL = 'https://lwchvh8j-4000.usw3.devtunnels.ms';
         }
         console.log('🔗 API URL configurada:', window.SCORES_API_URL);
         console.log('🌐 Entorno detectado:', window.location.hostname.includes('devtunnels.ms') ? 'Túnel' : 'Local');

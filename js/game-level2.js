@@ -258,7 +258,7 @@ loaderGLB.load("./assets/models/Scenario2Colissions.glb", function (model) {
 							color: 0xff0000,
 							wireframe: true,
 							transparent: true,
-							opacity: 0.8
+							opacity: 0.0
 						});
 						const boxHelper = new THREE.Mesh(boxGeometry, boxMaterial);
 						boxHelper.position.copy(center);
@@ -275,16 +275,16 @@ loaderGLB.load("./assets/models/Scenario2Colissions.glb", function (model) {
 
 
 // Abeja - Enemigo
-loaderGLB.load("./assets/models/bee_cartoon.glb", function (model) {
-	const obj = model.scene;
-	obj.scale.set(0.5, 0.5, 0.5);
-	obj.rotateY(2);
-	obj.position.set(-7, 1.5, 1);
-	obj.userData.enemyName = "Abeja";
-	obj.userData.isEnemy = true;
-	scene.add(obj);
-	enemies.push(obj);
-});
+// loaderGLB.load("./assets/models/bee_cartoon.glb", function (model) {
+// 	const obj = model.scene;
+// 	obj.scale.set(0.5, 0.5, 0.5);
+// 	obj.rotateY(2);
+// 	obj.position.set(-7, 1.5, 1);
+// 	obj.userData.enemyName = "Abeja";
+// 	obj.userData.isEnemy = true;
+// 	scene.add(obj);
+// 	enemies.push(obj);
+// });
 
 // Oso - Enemigo (persigue al jugador)
 loaderGLB.load("./assets/models/ice_bear_we_bare_bears.glb", function (model) {
@@ -295,7 +295,7 @@ loaderGLB.load("./assets/models/ice_bear_we_bare_bears.glb", function (model) {
 	obj.userData.enemyName = "Oso";
 	obj.userData.isEnemy = true;
 	obj.userData.detectionRange = 8;
-	obj.userData.chaseSpeed = 0.08;
+	obj.userData.chaseSpeed = 0.05;
 	obj.userData.originalPosition = obj.position.clone();
 	obj.userData.isChasing = false;
 	obj.userData.isAggressive = true;
@@ -306,9 +306,9 @@ loaderGLB.load("./assets/models/ice_bear_we_bare_bears.glb", function (model) {
 // Tucan - Enemigo
 loaderGLB.load("./assets/models/low_poly_toucan.glb", function (model) {
 	const obj = model.scene;
-	obj.rotateY(Math.PI / 2);
+	//obj.rotateY(Math.PI / 2);
 	obj.scale.set(0.12, 0.12, 0.12);
-	obj.position.set(6, 0, -3);
+	obj.position.set(-7, 0, 3);
 	obj.userData.enemyName = "Tucán";
 	obj.userData.isEnemy = true;
 	scene.add(obj);
@@ -316,7 +316,7 @@ loaderGLB.load("./assets/models/low_poly_toucan.glb", function (model) {
 });
 
 // Elephant Anim - Enemigo
-let mixer;
+ let mixer;
 const animScene = new GLTFLoader();
 animScene.load("./assets/models/elephant.glb", function (model) {
 	const obj = model.scene;
@@ -341,21 +341,21 @@ playerController.loadPlayerModel(() => {
 });
 
 // Owl Anim
-let mixer2;
-animScene.load("./assets/models/day_20_-_snowy_owl.glb", function (model) {
-	const obj = model.scene;
-	obj.rotateY(1);
-	obj.scale.set(1.5, 1.5, 1.5);
-	obj.position.set(-5, 2, -8);
-	obj.userData.enemyName = "Buho";
-    obj.userData.isEnemy = true;
-	scene.add(obj);
-	enemies.push(obj);
+ let mixer2;
+// animScene.load("./assets/models/day_20_-_snowy_owl.glb", function (model) {
+// 	const obj = model.scene;
+// 	obj.rotateY(1);
+// 	obj.scale.set(1.5, 1.5, 1.5);
+// 	obj.position.set(-5, 2, -8);
+// 	obj.userData.enemyName = "Buho";
+//     obj.userData.isEnemy = true;
+// 	scene.add(obj);
+// 	enemies.push(obj);
 
-	mixer2 = new THREE.AnimationMixer(obj);
-	const action2 = mixer2.clipAction(model.animations[0]);
-	action2.play();
-});
+// 	mixer2 = new THREE.AnimationMixer(obj);
+// 	const action2 = mixer2.clipAction(model.animations[0]);
+// 	action2.play();
+// });
 
 // Inicializar sistema de combate modular
 const battle = setupBattleSystem({
@@ -560,7 +560,7 @@ function updateAggressiveEnemies() {
 			const distance = player.position.distanceTo(enemy.position);
 			//console.log(`[DEBUG][N2] Distancia jugador-oso: ${distance}`);
 			const detectionRange = enemy.userData.detectionRange || 8;
-			const chaseSpeed = enemy.userData.chaseSpeed || 0.08;
+			const chaseSpeed = enemy.userData.chaseSpeed || 0.05;
 			const attackRange = interactionDistance;
 			if (distance <= detectionRange && distance > attackRange) {
 				enemy.userData.isChasing = true;
@@ -921,7 +921,18 @@ function playerAttack() {
 
 	const energyCost = 3 + Math.floor(Math.random() * 4);
     playerStats.energy = Math.max(0, playerStats.energy - energyCost);
-	
+	if(playerStats.energy <= 0){
+		Swal.fire({
+            title: "¡Oh no!",
+            text: "Te has quedado sin energia, has perdido",
+            imageUrl: "./assets/images/lose-icon.png",
+            imageWidth: 100,
+            imageHeight: 100,
+            confirmButtonText: "Volver al inicio"
+          }).then(() => {
+					window.location.href = "main.html";
+		});
+	}
 	updateBattleUI();
 	if (enemyStats.hp <= 0) {
 		endBattle(true);
@@ -940,7 +951,7 @@ function playerSpecialAttack() {
 	const damage = Math.max(10, playerStats.attack * 1.5 - enemyStats.defense + Math.floor(Math.random() * 15));
 	enemyStats.hp -= damage;
 
-	const energyCost = 8 + Math.floor(Math.random() * 8);
+	const energyCost = 8 + Math.floor(Math.random() * 15);
     playerStats.energy = Math.max(0, playerStats.energy - energyCost);  
 	
 	showMessage(`¡${playerStats.name} usó Ataque Especial e hizo ${damage} de daño!`);
@@ -1049,7 +1060,7 @@ function endBattle(won) {
 					Swal.fire({
 					title: "¡Nivel completado!",
 					text: "Has derrotado a todos los enemigos",
-					imageUrl: "./assets/level-complete/win-icon.png",
+					imageUrl: "./assets/images/level-complete.png",
 					imageWidth: 120,
 					imageHeight: 120,
 					confirmButtonText: "Volver al inicio"

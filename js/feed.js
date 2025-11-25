@@ -1,6 +1,8 @@
 import { auth } from './firebase-config.js';
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+let currentUser = null;
+
 document.addEventListener('DOMContentLoaded', () => {
 
     const textarea = document.getElementById('mensaje');
@@ -18,13 +20,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     onAuthStateChanged(auth, (user) => {
         isAuthenticated = Boolean(user);
-        if (user) {
-            if (textarea) {
-                textarea.disabled = "false";
-            }
-            if(btnPublicar){
-                btnPublicar.textContent = "Publicar"
-            }
+        console.log(isAuthenticated);
+        if (isAuthenticated == true) {
+            btnPublicar.textContent = "Publicar"
+            currentUser = user.displayName;
+        }else{
+            textarea.disabled = "true";
         }
     });
 });
@@ -44,9 +45,9 @@ async function enviarPost () {
     publicarBtn.style.backgroundColor = "#FFB30F";
     publicarBtn.textContent = "Publicando...";
     const PAGE_ID = "809241768945035";
-    const ACCESS_TOKEN = "EAAfnTtgFdgMBPo4NtaVGvxv7Pw5V4UmBvy31ijVRNjiV1gX7qJBThUZALzYShK1bnp8Qp4bQZARou7bWwkB5NlRcVUOlsZCo0qZBZBRZC7DC9sc3E6sump2cJghUYF6o0miAIdlvsNTmu0fVWnb8xr3rKjbZCq3jmFJcjGnOrLWlkHtWQAF2vvQ9eLe2zL98ay4HevIDFmgDeM6A2kxgblXB43BBWzt62rEfqKVg0FzCiwm";
+    const ACCESS_TOKEN = "EAAfnTtgFdgMBQL8FxCc6vMuhyIShlj5nv4T7X02ZCzWLaRNa6A2SFCh3Qkh4zCUQl7eSNVoFHkpBs44KTvBMGU5uti1EZCiJ8bB1Hq8s39I2c1dh5r4uaM3etBO2ObLGRokkEVabOJ360bnn8V1JyuQOqjSwZCqfU2YblvozPten0XgsOekZCazDQiLfWOZAyyIZAa3ZAjplUdAj9zfwcHU1a8p2dOZAZCFsaZCscsdGkZD";
   
-    const mensajeFinal = `${mensaje}\n- Usuario1`;
+    const mensajeFinal = `${mensaje}\n- ${currentUser}`;
 
     try {
         const response = await fetch(`https://graph.facebook.com/${PAGE_ID}/feed`, {
@@ -86,7 +87,7 @@ async function enviarPost () {
 const feed = document.getElementById("feed");
 
 function cargarPublicaciones() {
-  fetch("https://graph.facebook.com/v24.0/809241768945035/posts?fields=message,created_time,full_picture&access_token=EAAfnTtgFdgMBPo4NtaVGvxv7Pw5V4UmBvy31ijVRNjiV1gX7qJBThUZALzYShK1bnp8Qp4bQZARou7bWwkB5NlRcVUOlsZCo0qZBZBRZC7DC9sc3E6sump2cJghUYF6o0miAIdlvsNTmu0fVWnb8xr3rKjbZCq3jmFJcjGnOrLWlkHtWQAF2vvQ9eLe2zL98ay4HevIDFmgDeM6A2kxgblXB43BBWzt62rEfqKVg0FzCiwm")
+  fetch("https://graph.facebook.com/v24.0/809241768945035/posts?fields=message,created_time,full_picture&access_token=EAAfnTtgFdgMBQL8FxCc6vMuhyIShlj5nv4T7X02ZCzWLaRNa6A2SFCh3Qkh4zCUQl7eSNVoFHkpBs44KTvBMGU5uti1EZCiJ8bB1Hq8s39I2c1dh5r4uaM3etBO2ObLGRokkEVabOJ360bnn8V1JyuQOqjSwZCqfU2YblvozPten0XgsOekZCazDQiLfWOZAyyIZAa3ZAjplUdAj9zfwcHU1a8p2dOZAZCFsaZCscsdGkZD")
     .then(response => response.json())
     .then(data => {
     feed.innerHTML = ""; // Limpiar antes de volver a llenar

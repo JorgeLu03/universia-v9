@@ -517,12 +517,12 @@
                 const boxGeometry = new THREE.BoxGeometry(size.x, size.y, size.z);
                 
                 // Material wireframe rojo para colisiones internas
-                const boxMaterial = new THREE.MeshBasicMaterial({ 
-                  color: 0xff0000, // Rojo para distinguir de las colisiones de borde
-                  wireframe: true,
-                  transparent: true,
-                  opacity: 0.8
-                });
+                // const boxMaterial = new THREE.MeshBasicMaterial({ 
+                //   color: 0xff0000, // Rojo para distinguir de las colisiones de borde
+                //   wireframe: false,
+                //   transparent: true,
+                //   opacity: 0.8
+                // });
                 
                 const boxHelper = new THREE.Mesh(boxGeometry, boxMaterial);
                 boxHelper.position.copy(center);
@@ -553,7 +553,7 @@
     loaderGLB.load("assets/models/bee_cartoon.glb", function (model) {
       const obj = model.scene;
       obj.scale.set(0.5, 0.5, 0.5);
-      obj.position.set(6, 2, -1);
+      obj.position.set(6, 2, 3);
       obj.rotation.y = 4;  
       obj.userData.enemyName = "Abeja";
       obj.userData.isEnemy = true;
@@ -562,52 +562,52 @@
     });
 
     // Oso - Enemigo
-      loaderGLB.load("assets/models/ice_bear_we_bare_bears.glb", function (model) {
-        const obj = model.scene;
-        obj.scale.set(0.4, 0.4, 0.4);
-        obj.position.set(10, 1.5, 7);
-        obj.rotation.y = -Math.PI / 2; // Girar a la izquierda 90° en Y
-        obj.userData.enemyName = "Oso";
-        obj.userData.isEnemy = true;
-        obj.userData.detectionRange = 8;
-        obj.userData.chaseSpeed = 0.06;
-        obj.userData.originalPosition = obj.position.clone();
-        obj.userData.isChasing = false;
-        obj.userData.isAggressive = true;
-        scene.add(obj);
-        enemies.push(obj);
-          // --- IA de enemigos agresivos (oso) ---
-          function updateAggressiveEnemies() {
-            if (!playerInstance || !playerInstance.playerLoaded || inBattle) return;
-            const playerObj = playerInstance.getObject();
-            enemies.forEach(enemy => {
-              if (!enemy.userData.isAggressive) return;
-              const distance = playerObj.position.distanceTo(enemy.position);
-              const detectionRange = enemy.userData.detectionRange || 8;
-              const chaseSpeed = enemy.userData.chaseSpeed || 0.08;
-              const attackRange = interactionDistance;
-              if (distance <= detectionRange && distance > attackRange) {
-                enemy.userData.isChasing = true;
-                const direction = new THREE.Vector3().subVectors(playerObj.position, enemy.position).normalize();
-                const newPosition = enemy.position.clone();
-                newPosition.x += direction.x * chaseSpeed;
-                newPosition.z += direction.z * chaseSpeed;
-                // No colisión para simplificar
-                enemy.position.x += direction.x * chaseSpeed;
-                enemy.position.z += direction.z * chaseSpeed;
-                const targetRotation = Math.atan2(direction.x, direction.z);
-                enemy.rotation.y = targetRotation;
-              } else if (distance <= attackRange) {
-                if (!inBattle) {
-                  startBattle(enemy);
-                }
-                enemy.userData.isChasing = false;
-              } else {
-                enemy.userData.isChasing = false;
-              }
-            });
-          }
-      });
+      // loaderGLB.load("assets/models/ice_bear_we_bare_bears.glb", function (model) {
+      //   const obj = model.scene;
+      //   obj.scale.set(0.4, 0.4, 0.4);
+      //   obj.position.set(10, 1.5, 7);
+      //   obj.rotation.y = -Math.PI / 2; // Girar a la izquierda 90° en Y
+      //   obj.userData.enemyName = "Oso";
+      //   obj.userData.isEnemy = true;
+      //   obj.userData.detectionRange = 8;
+      //   obj.userData.chaseSpeed = 0.06;
+      //   obj.userData.originalPosition = obj.position.clone();
+      //   obj.userData.isChasing = false;
+      //   obj.userData.isAggressive = true;
+      //   scene.add(obj);
+      //   enemies.push(obj);
+      //     // --- IA de enemigos agresivos (oso) ---
+      //     function updateAggressiveEnemies() {
+      //       if (!playerInstance || !playerInstance.playerLoaded || inBattle) return;
+      //       const playerObj = playerInstance.getObject();
+      //       enemies.forEach(enemy => {
+      //         if (!enemy.userData.isAggressive) return;
+      //         const distance = playerObj.position.distanceTo(enemy.position);
+      //         const detectionRange = enemy.userData.detectionRange || 8;
+      //         const chaseSpeed = enemy.userData.chaseSpeed || 0.08;
+      //         const attackRange = interactionDistance;
+      //         if (distance <= detectionRange && distance > attackRange) {
+      //           enemy.userData.isChasing = true;
+      //           const direction = new THREE.Vector3().subVectors(playerObj.position, enemy.position).normalize();
+      //           const newPosition = enemy.position.clone();
+      //           newPosition.x += direction.x * chaseSpeed;
+      //           newPosition.z += direction.z * chaseSpeed;
+      //           // No colisión para simplificar
+      //           enemy.position.x += direction.x * chaseSpeed;
+      //           enemy.position.z += direction.z * chaseSpeed;
+      //           const targetRotation = Math.atan2(direction.x, direction.z);
+      //           enemy.rotation.y = targetRotation;
+      //         } else if (distance <= attackRange) {
+      //           if (!inBattle) {
+      //             startBattle(enemy);
+      //           }
+      //           enemy.userData.isChasing = false;
+      //         } else {
+      //           enemy.userData.isChasing = false;
+      //         }
+      //       });
+      //     }
+      // });
       
     // Elephant Anim - Enemigo
     let mixer;
@@ -616,7 +616,7 @@
       const obj = model.scene;
       obj.rotateY(-2.5);
       obj.scale.set(1.6, 1.6, 1.6);
-      obj.position.set(10, 0, -7.5);
+      obj.position.set(10, 0, -6.5);
       obj.userData.enemyName = "Elefante";
       obj.userData.isEnemy = true;
       scene.add(obj);
